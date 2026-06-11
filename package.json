@@ -1,0 +1,24 @@
+{
+  "name": "agendaflow",
+  "version": "0.1.0",
+  "description": "Intelligent scheduling platform with multi-tenancy and calendar sharing",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "src/shared",
+    "src/backend",
+    "src/frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:coverage": "npm run test:coverage --workspaces",
+    "lint": "npm run lint --workspaces",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -1,0 +1,85 @@
+@import '@fontsource-variable/inter';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand colors (ACRA) */
+    --primary: 59, 91, 219;
+    --secondary: 26, 45, 122;
+    --accent: 0, 102, 204;
+
+    /* Workspace customizable colors */
+    --workspace-primary: 59, 91, 219;
+    --workspace-sidebar: 26, 45, 122;
+    --workspace-accent: 0, 102, 204;
+
+    /* Semantic colors */
+    --success: 34, 197, 94;
+    --warning: 245, 158, 11;
+    --danger: 239, 68, 68;
+    --info: 59, 130, 246;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-6;
+  }
+
+  .input-base {
+    @apply px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors;
+  }
+
+  .label-base {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}
+
+/* Workspace theme application */
+.workspace-themed {
+  --primary: var(--workspace-primary);
+  --sidebar-color: var(--workspace-sidebar);
+  --accent: var(--workspace-accent);
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .hidden-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) {
+  .hidden-desktop {
+    display: none;
+  }
+}

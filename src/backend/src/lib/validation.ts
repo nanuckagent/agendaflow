@@ -1,0 +1,103 @@
+/**
+ * Validation helpers using Zod
+ */
+
+import { z, ZodError } from 'zod';
+
+/**
+ * Parse Zod validation errors into RFC 7807 format
+ */
+export function parseZodError(error: ZodError) {
+  const issues = error.issues.map((issue) => ({
+    path: issue.path.join('.'),
+    message: issue.message,
+    code: issue.code,
+  }));
+
+  return {
+    type: 'https://agendaflow.local/errors/validation-error',
+    title: 'Validation Error',
+    status: 422,
+    detail: 'One or more validation errors occurred',
+    errors: issues,
+  };
+}
+
+/**
+ * Appointment data schema
+ */
+export const appointmentSchema = z.object({
+  clientName: z.string().min(2).max(255),
+  clientPhone: z.string().regex(/^[\d+\-() ]+$/),
+  clientEmail: z.string().email(),
+  professionalId: z.string().uuid(),
+  serviceId: z.string().uuid(),
+  appointmentDate: z.coerce.date(),
+  appointmentTime: z.string().regex(/^\d{2}:\d{2}$/),
+  notes: z.string().optional(),
+});
+
+export type AppointmentInput = z.infer<typeof appointmentSchema>;
+
+/**
+ * Service data schema
+ */
+export const serviceSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  durationMinutes: z.number().int().positive(),
+  priceInCents: z.number().int().nonnegative(),
+});
+
+export type ServiceInput = z.infer<typeof serviceSchema>;
+
+/**
+ * Professional data schema
+ */
+export const professionalSchema = z.object({
+  name: z.string().min(1).max(255),
+  specialty: z.string().optional(),
+  bio: z.string().optional(),
+  photoUrl: z.string().url().optional(),
+});
+
+export type ProfessionalInput = z.infer<typeof professionalSchema>;
+
+/**
+ * Workspace data schema
+ */
+export const workspaceSchema = z.object({
+  name: z.string().min(1).max(255),
+  timezone: z.string().default('America/Sao_Paulo'),
+  currency: z.string().length(3).default('BRL'),
+  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  sidebarColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+});
+
+export type WorkspaceInput = z.infer<typeof workspaceSchema>;
+
+/**
+ * Login schema
+ */
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
+/**
+ * Safe parse with error handling
+ */
+export async function safeParse<T>(schema: z.Schema<T>, data: unknown): Promise<{ data?: T; error?: any }> {
+  try {
+    const validated = await schema.parseAsync(data);
+    return { data: validated };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return { error: parseZodError(error) };
+    }
+    throw error;
+  }
+}

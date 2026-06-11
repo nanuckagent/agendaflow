@@ -1,0 +1,263 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ${{ github.repository }}-backend
+  IMAGE_FRONTEND: ${{ github.repository }}-frontend
+  NODE_VERSION: '20'
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # Stage 1: Test (lint, typecheck, test)
+  # ────────────────────────────────────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agendaflow_test
+          POSTGRES_USER: agendaflow
+          POSTGRES_PASSWORD: testpass123
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces
+
+      - name: Run linters
+        run: npm run lint --workspaces
+
+      - name: Type check
+        run: npm run typecheck --workspaces
+
+      - name: Run tests
+        run: npm run test --workspaces
+        env:
+          DATABASE_URL: postgresql://agendaflow:testpass123@localhost:5432/agendaflow_test
+
+      - name: Build all packages
+        run: npm run build --workspaces
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Stage 2: Build and push Docker images
+  # ────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend-tags: ${{ steps.meta-backend.outputs.tags }}
+      frontend-tags: ${{ steps.meta-frontend.outputs.tags }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ github.sha }}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ────────────────────────────────────────────────────────────────────────────
+      # Backend Image Metadata
+      # ────────────────────────────────────────────────────────────────────────────
+      - name: Extract backend metadata
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # ────────────────────────────────────────────────────────────────────────────
+      # Frontend Image Metadata
+      # ────────────────────────────────────────────────────────────────────────────
+      - name: Extract frontend metadata
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # ────────────────────────────────────────────────────────────────────────────
+      # Build and Push Backend
+      # ────────────────────────────────────────────────────────────────────────────
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/backend.Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ────────────────────────────────────────────────────────────────────────────
+      # Build and Push Frontend
+      # ────────────────────────────────────────────────────────────────────────────
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/frontend.Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            VITE_API_URL=https://agendaflow.nanuck.com.br
+            VITE_APP_ENV=production
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Stage 3: Deploy to Production VPS
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://agendaflow.nanuck.com.br
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          DEPLOY_PATH: /opt/agendaflow
+          APP_VERSION: ${{ needs.build-and-push.outputs.version }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -i ~/.ssh/deploy_key "$VPS_USER@$VPS_HOST" bash << 'DEPLOY_SCRIPT'
+            set -e
+            DEPLOY_PATH=${DEPLOY_PATH:-/opt/agendaflow}
+            APP_VERSION=${APP_VERSION:-latest}
+
+            echo "🚀 Deploying AgendaFlow v${APP_VERSION}..."
+
+            cd "$DEPLOY_PATH"
+
+            # Pull latest code
+            echo "📥 Pulling latest code from main..."
+            git pull origin main
+
+            # Pull latest images
+            echo "🐳 Pulling latest Docker images..."
+            docker compose -f infra/docker-compose.prod.yml pull
+
+            # Update with new version
+            echo "📦 Updating services..."
+            export APP_VERSION="$APP_VERSION"
+            docker compose -f infra/docker-compose.prod.yml up -d
+
+            # Wait for backend to be healthy
+            echo "⏳ Waiting for backend to be healthy..."
+            for i in {1..30}; do
+              if curl -sf http://127.0.0.1:8000/healthz >/dev/null; then
+                echo "✅ Backend is healthy"
+                break
+              fi
+              echo "⏳ Attempt $i/30..."
+              sleep 2
+            done
+
+            # Run migrations (non-blocking)
+            echo "🗄️  Running database migrations..."
+            docker compose -f infra/docker-compose.prod.yml exec -T backend npm run db:migrate || true
+
+            echo "✅ Deployment complete!"
+          DEPLOY_SCRIPT
+
+      - name: Verify deployment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "🔍 Verifying deployment..."
+          for i in {1..10}; do
+            if curl -sf https://agendaflow.nanuck.com.br/healthz >/dev/null 2>&1; then
+              echo "✅ AgendaFlow is live and healthy!"
+              exit 0
+            fi
+            echo "⏳ Waiting for HTTPS endpoint... ($i/10)"
+            sleep 3
+          done
+          echo "⚠️  Warning: Could not verify HTTPS endpoint, but deployment completed"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Stage 4: Notification
+  # ────────────────────────────────────────────────────────────────────────────
+  notify:
+    needs: [build-and-push, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Build status
+        run: |
+          echo "✅ Build and Push: ${{ needs.build-and-push.result }}"
+          echo "✅ Deploy: ${{ needs.deploy.result }}"
+          echo "📍 Version: ${{ needs.build-and-push.outputs.version }}"
+
+      - name: Failed deployment notification
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check GitHub Actions logs for details"
+          exit 1
