@@ -3,9 +3,9 @@
  * Handles service CRUD operations
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { Database } from '../db/index.js';
-import { services } from '../db/schema/index.js';
+import { services, professionalServices } from '../db/schema/index.js';
 
 interface CreateServiceInput {
   name: string;
@@ -66,6 +66,31 @@ export class ServiceService {
       where: and(
         eq(services.workspaceId, workspaceId),
         filters?.active !== undefined ? eq(services.active, filters.active) : undefined
+      ),
+    });
+  }
+
+  /**
+   * List active services offered by a professional.
+   * A professional with no explicit links offers every active service.
+   */
+  async listServicesForProfessional(workspaceId: string, professionalId: string) {
+    const links = await this.db.query.professionalServices.findMany({
+      where: eq(professionalServices.professionalId, professionalId),
+    });
+
+    if (links.length === 0) {
+      return this.listServices(workspaceId, { active: true });
+    }
+
+    return this.db.query.services.findMany({
+      where: and(
+        eq(services.workspaceId, workspaceId),
+        eq(services.active, true),
+        inArray(
+          services.id,
+          links.map((l) => l.serviceId)
+        )
       ),
     });
   }

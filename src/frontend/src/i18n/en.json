@@ -158,7 +158,10 @@
     "phonePlaceholder": "Phone number",
     "bioPlaceholder": "Professional bio...",
     "empty": "No professionals yet",
-    "emptyHint": "Add your first professional to get started"
+    "emptyHint": "Add your first professional to get started",
+    "services": "Services offered",
+    "servicesHint": "With no selection, the professional offers all active services",
+    "allServices": "All services"
   },
   "services": {
     "title": "Services",

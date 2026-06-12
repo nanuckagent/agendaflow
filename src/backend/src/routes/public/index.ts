@@ -89,8 +89,12 @@ publicDiscoveryRoutes.get('/public/services', async (c) => {
   const workspaceId = c.req.header('X-Workspace-Id');
   if (!workspaceId) return missingWorkspaceHeader(c);
 
+  const professionalId = c.req.query('professionalId');
+
   const serviceService = new ServiceService((c as any).db);
-  const services = await serviceService.listServices(workspaceId, { active: true });
+  const services = professionalId
+    ? await serviceService.listServicesForProfessional(workspaceId, professionalId)
+    : await serviceService.listServices(workspaceId, { active: true });
 
   return c.json(
     {

@@ -4,7 +4,8 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
-import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeactivateProfessional } from '@/queries/professionals.js';
+import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeactivateProfessional, useSetProfessionalServices } from '@/queries/professionals.js';
+import { useServices } from '@/queries/services.js';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
@@ -21,9 +22,12 @@ function ProfessionalsPage() {
   const { mutate: createProfessional } = useCreateProfessional();
   const { mutate: updateProfessional } = useUpdateProfessional();
   const { mutate: deactivateProfessional } = useDeactivateProfessional();
+  const { mutate: setProfessionalServices } = useSetProfessionalServices();
+  const { data: services = [] } = useServices();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -50,13 +54,22 @@ function ProfessionalsPage() {
       return;
     }
 
+    const serviceIds = selectedServiceIds;
+
     if (editingId) {
       updateProfessional({
         id: editingId,
         data: formData,
       });
+      setProfessionalServices({ id: editingId, serviceIds });
     } else {
-      createProfessional(formData);
+      createProfessional(formData, {
+        onSuccess: (created) => {
+          if (serviceIds.length > 0) {
+            setProfessionalServices({ id: created.id, serviceIds });
+          }
+        },
+      });
     }
 
     setFormData({
@@ -66,8 +79,15 @@ function ProfessionalsPage() {
       specialty: '',
       bio: '',
     });
+    setSelectedServiceIds([]);
     setEditingId(null);
     setShowForm(false);
+  };
+
+  const toggleService = (serviceId: string) => {
+    setSelectedServiceIds((prev) =>
+      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId]
+    );
   };
 
   const handleEdit = (professional: any) => {
@@ -78,6 +98,7 @@ function ProfessionalsPage() {
       specialty: professional.specialty,
       bio: professional.bio || '',
     });
+    setSelectedServiceIds(professional.serviceIds || []);
     setEditingId(professional.id);
     setShowForm(true);
   };
@@ -90,8 +111,18 @@ function ProfessionalsPage() {
       specialty: '',
       bio: '',
     });
+    setSelectedServiceIds([]);
     setEditingId(null);
     setShowForm(false);
+  };
+
+  const serviceNames = (pro: any) => {
+    const ids: string[] = pro.serviceIds || [];
+    if (ids.length === 0) return t('professionals.allServices');
+    return services
+      .filter((s) => ids.includes(s.id))
+      .map((s) => s.name)
+      .join(', ');
   };
 
   return (
@@ -167,6 +198,29 @@ function ProfessionalsPage() {
             </div>
 
             <div>
+              <label className="label-base">{t('professionals.services')}</label>
+              <p className="text-sm text-gray-500 mb-2">{t('professionals.servicesHint')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {services
+                  .filter((s) => s.active)
+                  .map((service) => (
+                    <label
+                      key={service.id}
+                      className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedServiceIds.includes(service.id)}
+                        onChange={() => toggleService(service.id)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm text-gray-900">{service.name}</span>
+                    </label>
+                  ))}
+              </div>
+            </div>
+
+            <div>
               <label className="label-base">{t('professionals.bio')}</label>
               <textarea
                 value={formData.bio}
@@ -209,8 +263,8 @@ function ProfessionalsPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('professionals.name')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('professionals.specialty')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('professionals.services')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('professionals.email')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('professionals.phone')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.status')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('common.actions')}</th>
                 </tr>
@@ -220,8 +274,8 @@ function ProfessionalsPage() {
                   <tr key={pro.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-4 font-medium text-gray-900">{pro.name}</td>
                     <td className="py-3 px-4 text-gray-600">{pro.specialty}</td>
+                    <td className="py-3 px-4 text-gray-600">{serviceNames(pro)}</td>
                     <td className="py-3 px-4 text-gray-600">{pro.email || '-'}</td>
-                    <td className="py-3 px-4 text-gray-600">{pro.phone || '-'}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${

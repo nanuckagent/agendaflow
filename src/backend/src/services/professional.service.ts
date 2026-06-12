@@ -3,9 +3,9 @@
  * Handles professional CRUD operations
  */
 
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { Database } from '../db/index.js';
-import { professionals, users } from '../db/schema/index.js';
+import { professionals, users, services, professionalServices } from '../db/schema/index.js';
 
 interface CreateProfessionalInput {
   name: string;
@@ -79,6 +79,66 @@ export class ProfessionalService {
         filters?.active !== undefined ? eq(professionals.active, filters.active) : undefined
       ),
     });
+  }
+
+  /**
+   * List professionals with their linked service IDs
+   */
+  async listProfessionalsWithServices(workspaceId: string, filters?: { active?: boolean }) {
+    const pros = await this.listProfessionals(workspaceId, filters);
+    if (pros.length === 0) return [];
+
+    const links = await this.db.query.professionalServices.findMany({
+      where: inArray(
+        professionalServices.professionalId,
+        pros.map((p) => p.id)
+      ),
+    });
+
+    return pros.map((p) => ({
+      ...p,
+      serviceIds: links.filter((l) => l.professionalId === p.id).map((l) => l.serviceId),
+    }));
+  }
+
+  /**
+   * Replace the set of services a professional offers
+   */
+  async setProfessionalServices(
+    professionalId: string,
+    workspaceId: string,
+    serviceIds: string[]
+  ) {
+    // Throws if the professional does not belong to the workspace
+    await this.getProfessional(professionalId, workspaceId);
+
+    await this.db
+      .delete(professionalServices)
+      .where(eq(professionalServices.professionalId, professionalId));
+
+    if (serviceIds.length > 0) {
+      const validServices = await this.db.query.services.findMany({
+        where: and(eq(services.workspaceId, workspaceId), inArray(services.id, serviceIds)),
+      });
+
+      if (validServices.length > 0) {
+        await this.db
+          .insert(professionalServices)
+          .values(validServices.map((s) => ({ professionalId, serviceId: s.id })));
+      }
+    }
+
+    return this.getProfessionalServiceIds(professionalId);
+  }
+
+  /**
+   * Get linked service IDs for a professional
+   */
+  async getProfessionalServiceIds(professionalId: string) {
+    const links = await this.db.query.professionalServices.findMany({
+      where: eq(professionalServices.professionalId, professionalId),
+    });
+    return links.map((l) => l.serviceId);
   }
 
   /**

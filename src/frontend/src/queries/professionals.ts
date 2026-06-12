@@ -14,6 +14,7 @@ export interface Professional {
   bio?: string;
   photoUrl?: string;
   active: boolean;
+  serviceIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +81,19 @@ export function useUpdateProfessional() {
     }) => apiClient.patch<Professional>(`/v1/professionals/${id}`, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['professional', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['professionals'] });
+    },
+  });
+}
+
+// Replace the set of services a professional offers
+export function useSetProfessionalServices() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, serviceIds }: { id: string; serviceIds: string[] }) =>
+      apiClient.put<{ serviceIds: string[] }>(`/v1/professionals/${id}/services`, { serviceIds }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['professionals'] });
     },
   });

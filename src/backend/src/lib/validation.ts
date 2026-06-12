@@ -64,6 +64,15 @@ export const professionalSchema = z.object({
 export type ProfessionalInput = z.infer<typeof professionalSchema>;
 
 /**
+ * Professional services link schema
+ */
+export const professionalServicesSchema = z.object({
+  serviceIds: z.array(z.string().uuid()),
+});
+
+export type ProfessionalServicesInput = z.infer<typeof professionalServicesSchema>;
+
+/**
  * Workspace data schema
  */
 export const workspaceSchema = z.object({

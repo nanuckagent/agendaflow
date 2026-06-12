@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   index,
   serial,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 // Workspaces (multi-tenancy support)
@@ -129,6 +130,19 @@ export const services = pgTable(
   },
   (table) => ({
     workspaceIdx: index('idx_service_workspace').on(table.workspaceId),
+  })
+);
+
+// Professional <-> Service relation (which services each professional offers)
+export const professionalServices = pgTable(
+  'professional_services',
+  {
+    professionalId: uuid('professional_id').notNull(),
+    serviceId: uuid('service_id').notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.professionalId, table.serviceId] }),
+    serviceIdx: index('idx_professional_services_service').on(table.serviceId),
   })
 );
 

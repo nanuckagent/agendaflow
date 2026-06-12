@@ -158,7 +158,10 @@
     "phonePlaceholder": "Número de telefone",
     "bioPlaceholder": "Biografia do profissional...",
     "empty": "Nenhum profissional ainda",
-    "emptyHint": "Adicione seu primeiro profissional para começar"
+    "emptyHint": "Adicione seu primeiro profissional para começar",
+    "services": "Serviços oferecidos",
+    "servicesHint": "Sem seleção, o profissional oferece todos os serviços ativos",
+    "allServices": "Todos os serviços"
   },
   "services": {
     "title": "Serviços",

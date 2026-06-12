@@ -91,9 +91,14 @@ function BookingPage() {
   });
 
   const { data: services = [] } = useQuery({
-    queryKey: ['public-services', workspace?.id],
+    queryKey: ['public-services', workspace?.id, selectedProfessional],
     queryFn: () =>
-      apiClient.get<{ data: PublicService[] }>('/v1/public/services', workspaceHeader),
+      apiClient.get<{ data: PublicService[] }>(
+        selectedProfessional
+          ? `/v1/public/services?professionalId=${selectedProfessional}`
+          : '/v1/public/services',
+        workspaceHeader
+      ),
     select: (res) => res.data,
     enabled: !!workspace,
   });
@@ -229,7 +234,12 @@ function BookingPage() {
                 professionals.map((professional) => (
                   <button
                     key={professional.id}
-                    onClick={() => setSelectedProfessional(professional.id)}
+                    onClick={() => {
+                      if (selectedProfessional !== professional.id) {
+                        setSelectedService('');
+                      }
+                      setSelectedProfessional(professional.id);
+                    }}
                     className={`w-full p-4 rounded-lg border-2 transition-colors text-left ${
                       selectedProfessional === professional.id
                         ? 'border-blue-600 bg-blue-50'

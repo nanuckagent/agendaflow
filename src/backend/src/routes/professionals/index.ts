@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import type { RequestVariables } from '../../app.js';
-import { professionalSchema, safeParse } from '../../lib/validation.js';
+import { professionalSchema, professionalServicesSchema, safeParse } from '../../lib/validation.js';
 import { ProfessionalService } from '../../services/professional.service.js';
 import { requireAuth } from '../../middlewares/auth.js';
 
@@ -15,7 +15,7 @@ professionalRoutes.get('/professionals', async (c) => {
   const { workspaceId } = await requireAuth(c);
 
   const professionalService = new ProfessionalService((c as any).db);
-  const data = await professionalService.listProfessionals(workspaceId);
+  const data = await professionalService.listProfessionalsWithServices(workspaceId);
 
   return c.json({ data }, 200);
 });
@@ -88,6 +88,27 @@ professionalRoutes.patch('/professionals/:id', async (c) => {
   );
 
   return c.json(professional, 200);
+});
+
+// PUT /v1/professionals/:id/services - Replace linked services
+professionalRoutes.put('/professionals/:id/services', async (c) => {
+  const { workspaceId } = await requireAuth(c);
+
+  const body = await c.req.json();
+  const { data, error } = await safeParse(professionalServicesSchema, body);
+
+  if (error) {
+    return c.json(error, 422);
+  }
+
+  const professionalService = new ProfessionalService((c as any).db);
+  const serviceIds = await professionalService.setProfessionalServices(
+    c.req.param('id'),
+    workspaceId,
+    data!.serviceIds
+  );
+
+  return c.json({ serviceIds }, 200);
 });
 
 // DELETE /v1/professionals/:id - Deactivate professional
