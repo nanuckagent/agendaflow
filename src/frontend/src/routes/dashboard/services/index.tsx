@@ -50,13 +50,20 @@ function ServicesPage() {
       return;
     }
 
+    const payload = {
+      name: formData.name,
+      description: formData.description || undefined,
+      durationMinutes: formData.durationMinutes,
+      priceInCents: Math.round(formData.price * 100),
+    };
+
     if (editingId) {
       updateService({
         id: editingId,
-        data: formData,
+        data: payload,
       });
     } else {
-      createService(formData);
+      createService(payload);
     }
 
     setFormData({
@@ -75,7 +82,7 @@ function ServicesPage() {
       name: service.name,
       description: service.description || '',
       durationMinutes: service.durationMinutes,
-      price: service.price,
+      price: service.priceInCents / 100,
       category: service.category || '',
     });
     setEditingId(service.id);
@@ -240,7 +247,10 @@ function ServicesPage() {
                     <td className="py-3 px-4 text-gray-600">{service.category || '-'}</td>
                     <td className="py-3 px-4 text-gray-600">{service.durationMinutes}m</td>
                     <td className="py-3 px-4 font-medium text-gray-900">
-                      ${service.price.toFixed(2)}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(service.priceInCents / 100)}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">

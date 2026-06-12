@@ -10,27 +10,24 @@ export interface Service {
   name: string;
   description?: string;
   durationMinutes: number;
-  price: number;
+  priceInCents: number;
   category?: string;
   active: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateServiceRequest {
   name: string;
   description?: string;
   durationMinutes: number;
-  price: number;
-  category?: string;
+  priceInCents: number;
 }
 
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
   durationMinutes?: number;
-  price?: number;
-  category?: string;
+  priceInCents?: number;
   active?: boolean;
 }
 

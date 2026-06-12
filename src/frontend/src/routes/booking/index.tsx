@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { format } from 'date-fns';
 import { apiClient } from '@/lib/api.js';
 
 interface SearchParams {
@@ -302,7 +303,7 @@ function BookingPage() {
                   type="date"
                   value={appointmentDate}
                   onChange={(e) => setAppointmentDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={format(new Date(), 'yyyy-MM-dd')}
                   className="input-base w-full"
                   required
                 />

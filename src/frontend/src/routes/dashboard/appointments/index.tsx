@@ -8,6 +8,14 @@ import { useAppointments, useCancelAppointment } from '@/queries/appointments.js
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Plus, Trash2, Check } from 'lucide-react';
+import { format, subDays } from 'date-fns';
+
+// appointmentDate carries the literal booked date in its UTC date part;
+// converting to local time would shift it to the previous day in UTC-3
+const formatDateBR = (isoDate: string) => {
+  const [y, m, d] = isoDate.split('T')[0].split('-');
+  return `${d}/${m}/${y}`;
+};
 
 export const Route = createFileRoute('/dashboard/appointments/')({
   component: AppointmentsPage,
@@ -18,10 +26,8 @@ function AppointmentsPage() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const [filters, setFilters] = useState({
-    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0],
-    dateTo: new Date().toISOString().split('T')[0],
+    dateFrom: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+    dateTo: format(new Date(), 'yyyy-MM-dd'),
     status: '',
   });
 
@@ -140,7 +146,7 @@ function AppointmentsPage() {
                 {appointments.map((apt) => (
                   <tr key={apt.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-900">
-                      {apt.appointmentDate} {apt.appointmentTime}
+                      {formatDateBR(apt.appointmentDate)} {apt.appointmentTime}
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-gray-900">{apt.clientName}</div>
