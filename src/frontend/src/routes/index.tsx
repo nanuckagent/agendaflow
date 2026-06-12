@@ -6,12 +6,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
 import { ArrowRight, Calendar, Users, Settings, BarChart3 } from 'lucide-react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
 });
 
 function LandingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
 
@@ -23,7 +25,7 @@ function LandingPage() {
   }, [isLoggedIn, navigate]);
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || ''}/v1/auth/google`;
+    navigate({ to: '/login' });
   };
 
   return (
@@ -37,7 +39,7 @@ function LandingPage() {
               onClick={handleGoogleLogin}
               className="btn-primary"
             >
-              Sign In
+              {t('auth.login')}
             </button>
           </div>
         </div>
@@ -47,19 +49,18 @@ function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-20">
           <h2 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-6">
-            Intelligent Scheduling
+            {t('landing.heroTitle')}
             <br />
-            <span className="text-blue-600">Made Simple</span>
+            <span className="text-blue-600">{t('landing.heroTitleHighlight')}</span>
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            AgendaFlow is a modern appointment scheduling platform designed for service businesses.
-            Manage professionals, services, and appointments with ease.
+            {t('landing.heroSubtitle')}
           </p>
           <button
             onClick={handleGoogleLogin}
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg"
           >
-            Get Started with Google
+            {t('landing.getStarted')}
             <ArrowRight size={24} />
           </button>
         </div>
@@ -69,23 +70,23 @@ function LandingPage() {
           {[
             {
               icon: Calendar,
-              title: 'Smart Scheduling',
-              description: 'Easy appointment booking with real-time availability',
+              title: t('landing.featureSchedulingTitle'),
+              description: t('landing.featureSchedulingDesc'),
             },
             {
               icon: Users,
-              title: 'Team Management',
-              description: 'Manage professionals and their specialties',
+              title: t('landing.featureTeamTitle'),
+              description: t('landing.featureTeamDesc'),
             },
             {
               icon: Settings,
-              title: 'Customization',
-              description: 'Brand your workspace with custom colors and logo',
+              title: t('landing.featureCustomizationTitle'),
+              description: t('landing.featureCustomizationDesc'),
             },
             {
               icon: BarChart3,
-              title: 'Analytics',
-              description: 'Track appointments, revenue, and ratings',
+              title: t('landing.featureAnalyticsTitle'),
+              description: t('landing.featureAnalyticsDesc'),
             },
           ].map((feature) => {
             const Icon = feature.icon;
@@ -101,15 +102,15 @@ function LandingPage() {
 
         {/* CTA Section */}
         <div className="bg-blue-600 rounded-2xl p-12 text-center text-white my-20">
-          <h3 className="text-3xl font-bold mb-4">Ready to streamline your scheduling?</h3>
+          <h3 className="text-3xl font-bold mb-4">{t('landing.ctaTitle')}</h3>
           <p className="text-lg text-blue-100 mb-8">
-            Join hundreds of service businesses using AgendaFlow
+            {t('landing.ctaSubtitle')}
           </p>
           <button
             onClick={handleGoogleLogin}
             className="inline-block px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
           >
-            Sign Up Now
+            {t('landing.signUpNow')}
           </button>
         </div>
       </section>
@@ -120,29 +121,29 @@ function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h4 className="text-white font-semibold mb-4">AgendaFlow</h4>
-              <p className="text-sm">Intelligent scheduling platform for service businesses</p>
+              <p className="text-sm">{t('landing.footerTagline')}</p>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">Product</h5>
+              <h5 className="text-white font-semibold mb-4">{t('landing.footerProduct')}</h5>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footerFeatures')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footerPricing')}</a></li>
               </ul>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">Legal</h5>
+              <h5 className="text-white font-semibold mb-4">{t('landing.footerLegal')}</h5>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footerPrivacy')}</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footerTerms')}</a></li>
               </ul>
             </div>
             <div>
-              <h5 className="text-white font-semibold mb-4">Contact</h5>
+              <h5 className="text-white font-semibold mb-4">{t('landing.footerContact')}</h5>
               <p className="text-sm">support@agendaflow.local</p>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>&copy; 2024 AgendaFlow. All rights reserved.</p>
+            <p>{t('landing.copyright')}</p>
           </div>
         </div>
       </footer>

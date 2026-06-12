@@ -4,14 +4,39 @@
 
 import { createFileRoute, useSearch, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useProfessionals } from '@/queries/professionals.js';
-import { useServices } from '@/queries/services.js';
-import { useCreateAppointment } from '@/queries/appointments.js';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
-import { useWorkspaceStore } from '@/stores/workspace-store.js';
+import { apiClient } from '@/lib/api.js';
 
 interface SearchParams {
   workspace?: string;
+}
+
+interface PublicWorkspace {
+  id: string;
+  slug: string;
+  name: string;
+  timezone: string;
+  currency: string;
+  primaryColor?: string;
+  logoUrl?: string;
+}
+
+interface PublicProfessional {
+  id: string;
+  name: string;
+  specialty?: string;
+  bio?: string;
+  photoUrl?: string;
+}
+
+interface PublicService {
+  id: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  priceInCents: number;
 }
 
 export const Route = createFileRoute('/booking/')({
@@ -23,8 +48,8 @@ export const Route = createFileRoute('/booking/')({
 
 function BookingPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { workspace: workspaceSlug } = useSearch({ from: '/booking/' });
-  const { setActiveWorkspace } = useWorkspaceStore();
 
   const [step, setStep] = useState(1);
   const [selectedProfessional, setSelectedProfessional] = useState('');
@@ -37,30 +62,75 @@ function BookingPage() {
   const [notes, setNotes] = useState('');
   const [bookingCode, setBookingCode] = useState('');
 
-  const { data: professionals = [] } = useProfessionals();
-  const { data: services = [] } = useServices();
-  const { mutate: createAppointment, isPending } = useCreateAppointment();
+  const {
+    data: workspace,
+    isLoading: workspaceLoading,
+    isError: workspaceError,
+  } = useQuery({
+    queryKey: ['public-workspace', workspaceSlug],
+    queryFn: () =>
+      apiClient.get<PublicWorkspace>(`/v1/public/workspaces/${workspaceSlug}`),
+    enabled: !!workspaceSlug,
+    retry: false,
+  });
+
+  const workspaceHeader = workspace
+    ? { 'X-Workspace-Id': workspace.id }
+    : undefined;
+
+  const { data: professionals = [] } = useQuery({
+    queryKey: ['public-professionals', workspace?.id],
+    queryFn: () =>
+      apiClient.get<{ data: PublicProfessional[] }>(
+        '/v1/public/professionals',
+        workspaceHeader
+      ),
+    select: (res) => res.data,
+    enabled: !!workspace,
+  });
+
+  const { data: services = [] } = useQuery({
+    queryKey: ['public-services', workspace?.id],
+    queryFn: () =>
+      apiClient.get<{ data: PublicService[] }>('/v1/public/services', workspaceHeader),
+    select: (res) => res.data,
+    enabled: !!workspace,
+  });
+
+  const { mutate: createAppointment, isPending } = useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      apiClient.post<{ id: string; code: string; status: string }>(
+        '/v1/appointments/book',
+        data,
+        workspaceHeader
+      ),
+  });
+
+  const formatPrice = (cents: number) =>
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: workspace?.currency || 'BRL',
+    }).format(cents / 100);
 
   const handleNextStep = () => {
     if (step < 5) {
-      // Validate current step
       if (step === 1 && !selectedProfessional) {
-        alert('Please select a professional');
+        alert(t('booking.selectProfessional'));
         return;
       }
       if (step === 2 && !selectedService) {
-        alert('Please select a service');
+        alert(t('booking.selectService'));
         return;
       }
       if (step === 3 && (!appointmentDate || !appointmentTime)) {
-        alert('Please select a date and time');
+        alert(t('booking.selectDateTime'));
         return;
       }
       if (
         step === 4 &&
         (!clientName.trim() || !clientEmail.trim() || !clientPhone.trim())
       ) {
-        alert('Please fill in all required fields');
+        alert(t('booking.fillRequired'));
         return;
       }
       setStep(step + 1);
@@ -80,13 +150,38 @@ function BookingPage() {
         notes,
       },
       {
-        onSuccess: (data: any) => {
+        onSuccess: (data) => {
           setBookingCode(data.code);
           setStep(5);
+        },
+        onError: (error) => {
+          alert(error instanceof Error ? error.message : t('errors.tryAgain'));
         },
       }
     );
   };
+
+  if (!workspaceSlug || workspaceError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="card text-center max-w-md">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">AgendaFlow</h1>
+          <p className="text-gray-600">{t('booking.workspaceNotFound')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (workspaceLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('booking.loadingWorkspace')}</p>
+        </div>
+      </div>
+    );
+  }
 
   const progressPercentage = (step / 5) * 100;
 
@@ -95,10 +190,9 @@ function BookingPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900">Book an Appointment</h1>
-          <p className="text-gray-600 mt-2">
-            Choose your professional, service, and preferred time
-          </p>
+          <p className="text-sm font-medium text-blue-600">{workspace?.name}</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('booking.title')}</h1>
+          <p className="text-gray-600 mt-2">{t('booking.subtitle')}</p>
         </div>
       </div>
 
@@ -108,9 +202,11 @@ function BookingPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">
-              Step {step} of 5
+              {t('booking.stepOf', { step, total: 5 })}
             </span>
-            <span className="text-sm font-medium text-gray-600">{Math.round(progressPercentage)}%</span>
+            <span className="text-sm font-medium text-gray-600">
+              {Math.round(progressPercentage)}%
+            </span>
           </div>
           <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -123,7 +219,9 @@ function BookingPage() {
         {/* Step 1: Select Professional */}
         {step === 1 && (
           <div className="card">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Select a Professional</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {t('booking.step1')}
+            </h2>
 
             <div className="space-y-3">
               {professionals.length > 0 ? (
@@ -142,7 +240,7 @@ function BookingPage() {
                   </button>
                 ))
               ) : (
-                <p className="text-gray-600">No professionals available</p>
+                <p className="text-gray-600">{t('booking.noProfessionals')}</p>
               )}
             </div>
           </div>
@@ -151,7 +249,9 @@ function BookingPage() {
         {/* Step 2: Select Service */}
         {step === 2 && (
           <div className="card">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Select a Service</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {t('booking.step2')}
+            </h2>
 
             <div className="space-y-3">
               {services.length > 0 ? (
@@ -172,15 +272,17 @@ function BookingPage() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          ${service.price.toFixed(2)}
+                          {formatPrice(service.priceInCents)}
                         </p>
-                        <p className="text-gray-600 text-sm">{service.durationMinutes}m</p>
+                        <p className="text-gray-600 text-sm">
+                          {service.durationMinutes} {t('services.minutes')}
+                        </p>
                       </div>
                     </div>
                   </button>
                 ))
               ) : (
-                <p className="text-gray-600">No services available</p>
+                <p className="text-gray-600">{t('booking.noServices')}</p>
               )}
             </div>
           </div>
@@ -189,11 +291,13 @@ function BookingPage() {
         {/* Step 3: Choose Date & Time */}
         {step === 3 && (
           <div className="card">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose Date & Time</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {t('booking.step3')}
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="label-base">Date *</label>
+                <label className="label-base">{t('booking.date')} *</label>
                 <input
                   type="date"
                   value={appointmentDate}
@@ -205,21 +309,21 @@ function BookingPage() {
               </div>
 
               <div>
-                <label className="label-base">Time *</label>
+                <label className="label-base">{t('booking.time')} *</label>
                 <select
                   value={appointmentTime}
                   onChange={(e) => setAppointmentTime(e.target.value)}
                   className="input-base w-full"
                   required
                 >
-                  <option value="">Select a time</option>
-                  <option value="09:00">09:00 AM</option>
-                  <option value="10:00">10:00 AM</option>
-                  <option value="11:00">11:00 AM</option>
-                  <option value="14:00">2:00 PM</option>
-                  <option value="15:00">3:00 PM</option>
-                  <option value="16:00">4:00 PM</option>
-                  <option value="17:00">5:00 PM</option>
+                  <option value="">{t('booking.selectTime')}</option>
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="17:00">17:00</option>
                 </select>
               </div>
             </div>
@@ -229,51 +333,53 @@ function BookingPage() {
         {/* Step 4: Client Information */}
         {step === 4 && (
           <div className="card">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Information</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {t('booking.step4')}
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="label-base">Full Name *</label>
+                <label className="label-base">{t('booking.fullName')} *</label>
                 <input
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Maria da Silva"
                   className="input-base w-full"
                   required
                 />
               </div>
 
               <div>
-                <label className="label-base">Email *</label>
+                <label className="label-base">{t('booking.clientEmail')} *</label>
                 <input
                   type="email"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  placeholder="john@example.com"
+                  placeholder="maria@exemplo.com.br"
                   className="input-base w-full"
                   required
                 />
               </div>
 
               <div>
-                <label className="label-base">Phone *</label>
+                <label className="label-base">{t('booking.clientPhone')} *</label>
                 <input
                   type="tel"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="(11) 99999-9999"
                   className="input-base w-full"
                   required
                 />
               </div>
 
               <div>
-                <label className="label-base">Notes</label>
+                <label className="label-base">{t('booking.notes')}</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Any special requests or information?"
+                  placeholder={t('booking.notesPlaceholder')}
                   rows={4}
                   className="input-base w-full"
                 />
@@ -289,22 +395,22 @@ function BookingPage() {
               <Check size={32} className="text-green-600" />
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-            <p className="text-gray-600 mb-6">Your appointment has been successfully booked.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {t('booking.bookingConfirmed')}
+            </h2>
+            <p className="text-gray-600 mb-6">{t('booking.successMessage')}</p>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-left">
-              <p className="text-sm text-gray-600 mb-2">Booking Code</p>
+              <p className="text-sm text-gray-600 mb-2">{t('booking.bookingCode')}</p>
               <p className="text-2xl font-bold text-blue-900 font-mono">{bookingCode}</p>
               <p className="text-sm text-gray-600 mt-4">
-                A confirmation email has been sent to <span className="font-medium">{clientEmail}</span>
+                {t('booking.confirmationEmail')}{' '}
+                <span className="font-medium">{clientEmail}</span>
               </p>
             </div>
 
-            <button
-              onClick={() => navigate({ to: '/' })}
-              className="btn-primary"
-            >
-              Back to Home
+            <button onClick={() => navigate({ to: '/' })} className="btn-primary">
+              {t('common.backToHome')}
             </button>
           </div>
         )}
@@ -318,7 +424,7 @@ function BookingPage() {
               className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ArrowLeft size={20} />
-              Previous
+              {t('common.previous')}
             </button>
 
             {step === 4 ? (
@@ -327,7 +433,7 @@ function BookingPage() {
                 disabled={isPending}
                 className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isPending ? 'Confirming...' : 'Confirm Booking'}
+                {isPending ? t('booking.confirming') : t('booking.confirmBooking')}
                 <ArrowRight size={20} />
               </button>
             ) : (
@@ -335,7 +441,7 @@ function BookingPage() {
                 onClick={handleNextStep}
                 className="btn-primary flex items-center gap-2"
               >
-                Next
+                {t('common.next')}
                 <ArrowRight size={20} />
               </button>
             )}

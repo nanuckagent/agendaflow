@@ -6,6 +6,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
 import { useAppointments, useCancelAppointment } from '@/queries/appointments.js';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Calendar, Plus, Trash2, Check } from 'lucide-react';
 
 export const Route = createFileRoute('/dashboard/appointments/')({
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/dashboard/appointments/')({
 });
 
 function AppointmentsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const [filters, setFilters] = useState({
@@ -37,7 +39,7 @@ function AppointmentsPage() {
   }
 
   const handleCancel = (appointmentId: string) => {
-    if (confirm('Are you sure you want to cancel this appointment?')) {
+    if (confirm(t('appointments.confirmCancel'))) {
       cancelAppointment({
         appointmentId,
         cancellationToken: undefined,
@@ -64,24 +66,24 @@ function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
-          <p className="text-gray-600 mt-2">Manage all your appointments and bookings</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('appointments.title')}</h1>
+          <p className="text-gray-600 mt-2">{t('appointments.subtitle')}</p>
         </div>
         <button
           onClick={() => navigate({ to: '/dashboard' })}
           className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
-          New Appointment
+          {t('appointments.new')}
         </button>
       </div>
 
       {/* Filters */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('appointments.filters')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="label-base">From Date</label>
+            <label className="label-base">{t('appointments.fromDate')}</label>
             <input
               type="date"
               value={filters.dateFrom}
@@ -90,7 +92,7 @@ function AppointmentsPage() {
             />
           </div>
           <div>
-            <label className="label-base">To Date</label>
+            <label className="label-base">{t('appointments.toDate')}</label>
             <input
               type="date"
               value={filters.dateTo}
@@ -99,17 +101,17 @@ function AppointmentsPage() {
             />
           </div>
           <div>
-            <label className="label-base">Status</label>
+            <label className="label-base">{t('appointments.status')}</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="input-base w-full"
             >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">{t('appointments.allStatuses')}</option>
+              <option value="pending">{t('appointments.pending')}</option>
+              <option value="confirmed">{t('appointments.confirmed')}</option>
+              <option value="completed">{t('appointments.completed')}</option>
+              <option value="cancelled">{t('appointments.cancelled')}</option>
             </select>
           </div>
         </div>
@@ -126,12 +128,12 @@ function AppointmentsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Date & Time</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Client</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Professional</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Service</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.dateTime')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.client')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.professional')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.service')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.status')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,13 +146,13 @@ function AppointmentsPage() {
                       <div className="text-gray-900">{apt.clientName}</div>
                       <div className="text-gray-600 text-sm">{apt.clientEmail}</div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">Professional</td>
-                    <td className="py-3 px-4 text-gray-600">Service</td>
+                    <td className="py-3 px-4 text-gray-600">{t('appointments.professional')}</td>
+                    <td className="py-3 px-4 text-gray-600">{t('appointments.service')}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusBadgeColor(apt.status)}`}
                       >
-                        {apt.status}
+                        {t(`appointments.${apt.status}`)}
                       </span>
                     </td>
                     <td className="py-3 px-4">
@@ -159,7 +161,7 @@ function AppointmentsPage() {
                           <button
                             onClick={() => {}}
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Confirm"
+                            title={t('common.confirm')}
                           >
                             <Check size={18} />
                           </button>
@@ -168,7 +170,7 @@ function AppointmentsPage() {
                           <button
                             onClick={() => handleCancel(apt.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Cancel"
+                            title={t('common.cancel')}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -183,7 +185,7 @@ function AppointmentsPage() {
         ) : (
           <div className="text-center py-12">
             <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600">No appointments found</p>
+            <p className="text-gray-600">{t('appointments.noneFound')}</p>
           </div>
         )}
       </div>

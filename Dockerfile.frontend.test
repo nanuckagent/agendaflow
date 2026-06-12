@@ -1,0 +1,85 @@
+FROM nginx:alpine
+
+COPY <<EOF /etc/nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+
+  log_format main '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                  '\$status \$body_bytes_sent "\$http_referer" '
+                  '"\$http_user_agent" "\$http_x_forwarded_for"';
+
+  access_log /var/log/nginx/access.log main;
+
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout 65;
+  types_hash_max_size 2048;
+
+  # SPA configuration
+  server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Health check endpoint
+    location /health {
+      access_log off;
+      return 200 "OK\n";
+      add_header Content-Type text/plain;
+    }
+
+    # SPA: try to serve file directly, fallback to index.html for client-side routing
+    location / {
+      try_files \$uri \$uri/ /index.html;
+    }
+  }
+}
+EOF
+
+# Create placeholder index.html
+RUN mkdir -p /usr/share/nginx/html && \
+    cat > /usr/share/nginx/html/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AgendaFlow - Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { color: #3b5bdb; }
+    .status { padding: 20px; background: #f0f0f0; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AgendaFlow</h1>
+    <div class="status">
+      <p><strong>Status:</strong> ✅ Frontend is running!</p>
+      <p><strong>Version:</strong> 0.1.0 (Test)</p>
+      <p><strong>Time:</strong> <span id="time"></span></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('time').textContent = new Date().toLocaleString();
+  </script>
+</body>
+</html>
+HTMLEOF
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/health || exit 1
+
+EXPOSE 80

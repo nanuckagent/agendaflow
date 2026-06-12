@@ -4,6 +4,7 @@
 
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth-store.js';
 import { useWorkspaceStore } from '@/stores/workspace-store.js';
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/oauth/callback')({
 });
 
 function OAuthCallback() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { code, error } = useSearch({ from: '/oauth/callback' });
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -32,7 +34,7 @@ function OAuthCallback() {
   useEffect(() => {
     // Handle OAuth errors
     if (error) {
-      setErrorMessage(`OAuth Error: ${error}`);
+      setErrorMessage(t('auth.oauthError', { error }));
       setTimeout(() => {
         navigate({ to: '/' });
       }, 3000);
@@ -41,7 +43,7 @@ function OAuthCallback() {
 
     // Handle successful callback with code
     if (!code) {
-      setErrorMessage('No authorization code received');
+      setErrorMessage(t('auth.noAuthCode'));
       setTimeout(() => {
         navigate({ to: '/' });
       }, 3000);
@@ -61,7 +63,7 @@ function OAuthCallback() {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.detail || 'OAuth exchange failed');
+          throw new Error(error.detail || t('auth.oauthExchangeFailed'));
         }
 
         const data = await response.json();
@@ -86,10 +88,10 @@ function OAuthCallback() {
             navigate({ to: '/onboarding' });
           }
         } else {
-          throw new Error('Invalid response from server');
+          throw new Error(t('auth.invalidServerResponse'));
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Authentication failed';
+        const message = err instanceof Error ? err.message : t('auth.authFailed');
         setErrorMessage(message);
         setTimeout(() => {
           navigate({ to: '/' });
@@ -105,15 +107,15 @@ function OAuthCallback() {
       <div className="text-center">
         {errorMessage ? (
           <div>
-            <h1 className="text-2xl font-bold text-red-900 mb-2">Authentication Error</h1>
+            <h1 className="text-2xl font-bold text-red-900 mb-2">{t('auth.authErrorTitle')}</h1>
             <p className="text-red-700 mb-4">{errorMessage}</p>
-            <p className="text-gray-600 text-sm">Redirecting to home page...</p>
+            <p className="text-gray-600 text-sm">{t('auth.redirectingHome')}</p>
           </div>
         ) : (
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Authenticating...</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('auth.authenticating')}</h1>
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto"></div>
-            <p className="text-gray-600 mt-4">Please wait while we authenticate your account</p>
+            <p className="text-gray-600 mt-4">{t('auth.authenticatingWait')}</p>
           </div>
         )}
       </div>

@@ -3,34 +3,68 @@
  * Run: npm run seed
  */
 
-import { createDb } from './index.js';
-import { tenants, users, calendars } from './schema/index.js';
+import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
+import { createDb, closeDb } from './index.js';
+import { workspaces, users } from './schema/index.js';
 import { hash } from 'argon2';
+
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@agendaflow.local';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'admin123456';
 
 async function seed() {
   const db = await createDb();
 
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
-  // Create default tenant
-  const tenantId = 'default-tenant';
-  // Insert tenant
-  console.log('✅ Default tenant created');
+  const existing = await db.query.workspaces.findFirst({
+    where: eq(workspaces.slug, 'demo'),
+  });
 
-  // Create admin user
-  const passwordHash = await hash('admin123456');
-  // Insert user
-  console.log('✅ Admin user created (email: admin@agendaflow.local)');
+  if (existing) {
+    console.log('Workspace "demo" already exists, skipping seed.');
+    await closeDb();
+    process.exit(0);
+  }
 
-  // Create default calendar
-  // Insert calendar
-  console.log('✅ Default calendar created');
+  const adminUserId = randomUUID();
 
-  console.log('✅ Seeding complete!');
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({
+      slug: 'demo',
+      name: 'AgendaFlow Demo',
+      ownerUserId: adminUserId,
+    })
+    .returning();
+
+  console.log(`Workspace created: ${workspace.slug} (${workspace.id})`);
+
+  const passwordHash = await hash(ADMIN_PASSWORD, {
+    type: 2, // Argon2id
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+
+  await db.insert(users).values({
+    id: adminUserId,
+    email: ADMIN_EMAIL,
+    passwordHash,
+    firstName: 'Admin',
+    lastName: 'AgendaFlow',
+    workspaceId: workspace.id,
+    role: 'admin',
+  });
+
+  console.log(`Admin user created: ${ADMIN_EMAIL}`);
+  console.log('Seeding complete!');
+
+  await closeDb();
   process.exit(0);
 }
 
 seed().catch((error) => {
-  console.error('❌ Seeding failed:', error);
+  console.error('Seeding failed:', error);
   process.exit(1);
 });

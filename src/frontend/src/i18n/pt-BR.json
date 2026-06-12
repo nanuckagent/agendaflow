@@ -16,7 +16,14 @@
     "previous": "Anterior",
     "confirm": "Confirmar",
     "logout": "Sair",
-    "welcome": "Bem-vindo"
+    "welcome": "Bem-vindo",
+    "menu": "Menu",
+    "loggedInAs": "Conectado como",
+    "backToHome": "Voltar ao Início",
+    "actions": "Ações",
+    "saving": "Salvando...",
+    "saveChanges": "Salvar Alterações",
+    "viewAll": "Ver Todos"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -37,7 +44,21 @@
     "forgotPassword": "Esqueceu a senha?",
     "noAccount": "Não tem uma conta?",
     "alreadyHaveAccount": "Já tem uma conta?",
-    "googleOAuthRedirect": "Redirecionando para Google..."
+    "googleOAuthRedirect": "Redirecionando para Google...",
+    "signInToAccount": "Entre na sua conta",
+    "invalidCredentials": "Email ou senha inválidos",
+    "connectionError": "Erro de conexão. Tente novamente.",
+    "emailPlaceholder": "voce@empresa.com",
+    "signingIn": "Entrando...",
+    "oauthError": "Erro no OAuth: {{error}}",
+    "noAuthCode": "Nenhum código de autorização recebido",
+    "oauthExchangeFailed": "Falha na troca do código OAuth",
+    "invalidServerResponse": "Resposta inválida do servidor",
+    "authFailed": "Falha na autenticação",
+    "authErrorTitle": "Erro de Autenticação",
+    "redirectingHome": "Redirecionando para a página inicial...",
+    "authenticating": "Autenticando...",
+    "authenticatingWait": "Aguarde enquanto autenticamos sua conta"
   },
   "onboarding": {
     "title": "Criar Seu Workspace",
@@ -49,7 +70,13 @@
     "uploadLogo": "Fazer Upload de Logo",
     "create": "Criar Workspace",
     "namePlaceholder": "ex: Salão da Beleza",
-    "success": "Workspace criado com sucesso!"
+    "success": "Workspace criado com sucesso!",
+    "subtitle": "Configure seu workspace com nome e cores de personalização",
+    "brandingColors": "Personalização e Cores",
+    "creating": "Criando...",
+    "errorCreating": "Erro ao criar workspace",
+    "genericError": "Ocorreu um erro",
+    "enterName": "Digite um nome para o workspace"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -58,7 +85,18 @@
     "averageRating": "Avaliação Média",
     "nextBooking": "Próximo Agendamento",
     "recentBookings": "Agendamentos Recentes",
-    "noAppointments": "Sem agendamentos"
+    "noAppointments": "Sem agendamentos",
+    "welcomeMessage": "Bem-vindo de volta! Veja o que está acontecendo no seu negócio hoje.",
+    "changeFromYesterday": "+2 desde ontem",
+    "changeThisMonth": "+12% este mês",
+    "ratingOutOf": "4.8 de 5.0",
+    "inOneHour": "em 1 hora",
+    "appointmentsThisWeek": "Agendamentos da Semana",
+    "quickStats": "Estatísticas Rápidas",
+    "completionRate": "Taxa de Conclusão",
+    "cancellationRate": "Taxa de Cancelamento",
+    "noShowRate": "Taxa de Não Comparecimento",
+    "noAppointmentsToday": "Sem agendamentos hoje"
   },
   "appointments": {
     "title": "Agendamentos",
@@ -84,7 +122,14 @@
     "filters": "Filtros",
     "filterByProfessional": "Filtrar por Profissional",
     "filterByStatus": "Filtrar por Status",
-    "dateRange": "Intervalo de Datas"
+    "dateRange": "Intervalo de Datas",
+    "subtitle": "Gerencie todos os seus agendamentos e reservas",
+    "fromDate": "Data Inicial",
+    "toDate": "Data Final",
+    "allStatuses": "Todos os Status",
+    "dateTime": "Data e Hora",
+    "confirmCancel": "Tem certeza que deseja cancelar este agendamento?",
+    "noneFound": "Nenhum agendamento encontrado"
   },
   "professionals": {
     "title": "Profissionais",
@@ -101,7 +146,19 @@
     "deactivate": "Desativar",
     "activate": "Ativar",
     "email": "Email",
-    "phone": "Telefone"
+    "phone": "Telefone",
+    "subtitle": "Gerencie sua equipe e profissionais",
+    "addNew": "Adicionar Novo Profissional",
+    "update": "Atualizar Profissional",
+    "create": "Criar Profissional",
+    "fillNameSpecialty": "Preencha o nome e a especialidade",
+    "namePlaceholder": "Nome completo",
+    "specialtyPlaceholder": "ex: Cabeleireiro, Massoterapeuta",
+    "emailPlaceholder": "Endereço de email",
+    "phonePlaceholder": "Número de telefone",
+    "bioPlaceholder": "Biografia do profissional...",
+    "empty": "Nenhum profissional ainda",
+    "emptyHint": "Adicione seu primeiro profissional para começar"
   },
   "services": {
     "title": "Serviços",
@@ -113,7 +170,20 @@
     "duration": "Duração",
     "price": "Preço",
     "minutes": "minutos",
-    "category": "Categoria"
+    "category": "Categoria",
+    "subtitle": "Gerencie suas ofertas de serviços",
+    "addNew": "Adicionar Novo Serviço",
+    "update": "Atualizar Serviço",
+    "create": "Criar Serviço",
+    "fillRequired": "Preencha todos os campos obrigatórios corretamente",
+    "confirmDelete": "Tem certeza que deseja deletar este serviço?",
+    "namePlaceholder": "ex: Corte de Cabelo, Massagem",
+    "durationMinutes": "Duração (minutos)",
+    "priceCurrency": "Preço ($)",
+    "categoryPlaceholder": "ex: Cabelo, Spa",
+    "descriptionPlaceholder": "Descrição do serviço...",
+    "empty": "Nenhum serviço ainda",
+    "emptyHint": "Adicione seu primeiro serviço para começar"
   },
   "settings": {
     "title": "Configurações",
@@ -131,7 +201,21 @@
     "admin": "Administrador",
     "user": "Usuário",
     "remove": "Remover",
-    "invite": "Convidar"
+    "invite": "Convidar",
+    "subtitle": "Gerencie as configurações e preferências do seu workspace",
+    "updated": "Configurações atualizadas",
+    "brandingUpdated": "Sua personalização foi atualizada com sucesso",
+    "workspaceBranding": "Personalização do Workspace",
+    "teamMembers": "Membros da Equipe",
+    "inviteTeamMember": "Convidar Membro da Equipe",
+    "memberEmailPlaceholder": "colega@exemplo.com",
+    "currentMembers": "Membros Atuais",
+    "you": "Você",
+    "workspaceInfo": "Informações do Workspace",
+    "workspaceId": "ID do Workspace",
+    "dangerZone": "Zona de Perigo",
+    "dangerZoneWarning": "Estas ações são permanentes e não podem ser desfeitas.",
+    "deleteWorkspace": "Deletar Workspace"
   },
   "booking": {
     "title": "Agendar Consulta",
@@ -151,7 +235,23 @@
     "bookingConfirmed": "Agendamento Confirmado!",
     "bookingCode": "Código do Agendamento",
     "confirmationEmail": "Um email de confirmação foi enviado para",
-    "viewBooking": "Ver Detalhes do Agendamento"
+    "viewBooking": "Ver Detalhes do Agendamento",
+    "subtitle": "Escolha o profissional, o serviço e o melhor horário",
+    "stepOf": "Etapa {{step}} de {{total}}",
+    "date": "Data",
+    "time": "Hora",
+    "selectTime": "Selecione um horário",
+    "fullName": "Nome Completo",
+    "notes": "Observações",
+    "notesPlaceholder": "Alguma solicitação ou informação especial?",
+    "noProfessionals": "Nenhum profissional disponível",
+    "noServices": "Nenhum serviço disponível",
+    "confirming": "Confirmando...",
+    "successMessage": "Seu agendamento foi realizado com sucesso.",
+    "loadingWorkspace": "Carregando agenda...",
+    "workspaceNotFound": "Agenda não encontrada. Verifique o link de agendamento.",
+    "fillRequired": "Preencha todos os campos obrigatórios",
+    "selectDateTime": "Selecione data e horário"
   },
   "validation": {
     "required": "Campo obrigatório",
@@ -169,5 +269,31 @@
     "notFound": "Não encontrado",
     "serverError": "Erro do servidor",
     "tryAgain": "Tente novamente"
+  },
+  "landing": {
+    "heroTitle": "Agendamento Inteligente",
+    "heroTitleHighlight": "Descomplicado",
+    "heroSubtitle": "O AgendaFlow é uma plataforma moderna de agendamento criada para negócios de serviços. Gerencie profissionais, serviços e agendamentos com facilidade.",
+    "getStarted": "Começar Agora",
+    "featureSchedulingTitle": "Agendamento Inteligente",
+    "featureSchedulingDesc": "Agendamento fácil com disponibilidade em tempo real",
+    "featureTeamTitle": "Gestão de Equipe",
+    "featureTeamDesc": "Gerencie profissionais e suas especialidades",
+    "featureCustomizationTitle": "Personalização",
+    "featureCustomizationDesc": "Personalize seu workspace com cores e logo próprios",
+    "featureAnalyticsTitle": "Análises",
+    "featureAnalyticsDesc": "Acompanhe agendamentos, receita e avaliações",
+    "ctaTitle": "Pronto para simplificar seus agendamentos?",
+    "ctaSubtitle": "Junte-se a centenas de negócios de serviços que usam o AgendaFlow",
+    "signUpNow": "Criar Conta Agora",
+    "footerTagline": "Plataforma de agendamento inteligente para negócios de serviços",
+    "footerProduct": "Produto",
+    "footerFeatures": "Funcionalidades",
+    "footerPricing": "Preços",
+    "footerLegal": "Legal",
+    "footerPrivacy": "Privacidade",
+    "footerTerms": "Termos",
+    "footerContact": "Contato",
+    "copyright": "© 2024 AgendaFlow. Todos os direitos reservados."
   }
 }

@@ -8,6 +8,7 @@ import { useWorkspace } from '@/hooks/useWorkspace.js';
 import { useUpdateBranding } from '@/queries/workspaces.js';
 import { BrandingPreview } from '@/components/workspace/BrandingPreview.js';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, AlertCircle } from 'lucide-react';
 
 export const Route = createFileRoute('/dashboard/settings/')({
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/dashboard/settings/')({
 });
 
 function SettingsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const { activeWorkspaceId, branding } = useWorkspace();
@@ -74,23 +76,23 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your workspace settings and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
+        <p className="text-gray-600 mt-2">{t('settings.subtitle')}</p>
       </div>
 
       {success && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex gap-3">
           <AlertCircle className="text-green-600 flex-shrink-0" size={20} />
           <div>
-            <h3 className="font-semibold text-green-900">Settings updated</h3>
-            <p className="text-green-700 text-sm">Your branding has been successfully updated</p>
+            <h3 className="font-semibold text-green-900">{t('settings.updated')}</h3>
+            <p className="text-green-700 text-sm">{t('settings.brandingUpdated')}</p>
           </div>
         </div>
       )}
 
       {/* Branding tab */}
       <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Workspace Branding</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('settings.workspaceBranding')}</h2>
 
         <BrandingPreview
           primaryColor={colors.primaryColor}
@@ -114,45 +116,45 @@ function SettingsPage() {
             onClick={() => navigate({ to: '/dashboard' })}
             className="btn-secondary"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={isPending}
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? 'Saving...' : 'Save Changes'}
+            {isPending ? t('common.saving') : t('common.saveChanges')}
           </button>
         </div>
       </div>
 
       {/* Members section */}
       <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Team Members</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('settings.teamMembers')}</h2>
 
         <div className="space-y-4 pb-6 border-b border-gray-200 mb-6">
           <div>
-            <label className="label-base">Invite Team Member</label>
+            <label className="label-base">{t('settings.inviteTeamMember')}</label>
             <div className="flex gap-3">
               <input
                 type="email"
-                placeholder="colleague@example.com"
+                placeholder={t('settings.memberEmailPlaceholder')}
                 className="input-base flex-1"
               />
-              <button className="btn-primary">Invite</button>
+              <button className="btn-primary">{t('settings.invite')}</button>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <h3 className="font-semibold text-gray-900">Current Members</h3>
+          <h3 className="font-semibold text-gray-900">{t('settings.currentMembers')}</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
               <div>
-                <p className="font-medium text-gray-900">You</p>
-                <p className="text-sm text-gray-600">Owner</p>
+                <p className="font-medium text-gray-900">{t('settings.you')}</p>
+                <p className="text-sm text-gray-600">{t('settings.owner')}</p>
               </div>
-              <span className="text-sm font-medium text-gray-600">Owner</span>
+              <span className="text-sm font-medium text-gray-600">{t('settings.owner')}</span>
             </div>
           </div>
         </div>
@@ -160,11 +162,11 @@ function SettingsPage() {
 
       {/* Workspace info */}
       <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Workspace Information</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('settings.workspaceInfo')}</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="label-base">Workspace ID</label>
+            <label className="label-base">{t('settings.workspaceId')}</label>
             <input
               type="text"
               value={activeWorkspaceId}
@@ -175,7 +177,7 @@ function SettingsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label-base">Timezone</label>
+              <label className="label-base">{t('settings.timezone')}</label>
               <select className="input-base w-full">
                 <option>UTC</option>
                 <option>America/New_York</option>
@@ -185,7 +187,7 @@ function SettingsPage() {
             </div>
 
             <div>
-              <label className="label-base">Currency</label>
+              <label className="label-base">{t('settings.currency')}</label>
               <select className="input-base w-full">
                 <option>USD</option>
                 <option>EUR</option>
@@ -199,12 +201,12 @@ function SettingsPage() {
 
       {/* Danger zone */}
       <div className="card border-red-200 bg-red-50">
-        <h2 className="text-xl font-semibold text-red-900 mb-4">Danger Zone</h2>
+        <h2 className="text-xl font-semibold text-red-900 mb-4">{t('settings.dangerZone')}</h2>
         <p className="text-red-700 mb-4">
-          These actions are permanent and cannot be undone.
+          {t('settings.dangerZoneWarning')}
         </p>
         <button className="text-red-600 border border-red-300 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors">
-          Delete Workspace
+          {t('settings.deleteWorkspace')}
         </button>
       </div>
     </div>

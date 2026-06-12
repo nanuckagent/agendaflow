@@ -63,25 +63,14 @@ export function createApp(context: AppContext): Hono<{ Variables: RequestVariabl
     await next();
   });
 
-  // Health check routes (no auth required)
-  app.route('/healthz', healthRoutes);
-  app.route('/readyz', healthRoutes);
+  // Health check routes (no auth required); healthRoutes already defines /healthz and /readyz
+  app.route('/', healthRoutes);
 
   // Auth middleware for v1 routes
   const authMiddleware = createAuthMiddleware(context.db, context.redis);
 
-  // Public API routes (before auth middleware)
-  app.post('/v1/auth/google', async (c) => {
-    return c.json({ message: 'Google OAuth endpoint' });
-  });
-  app.get('/v1/auth/google/callback', async (c) => {
-    return c.json({ message: 'Google OAuth callback' });
-  });
-  app.post('/v1/auth/login', async (c) => {
-    return c.json({ message: 'Login endpoint' });
-  });
-
-  // Protected API routes (apply auth middleware)
+  // Protected API routes (apply auth middleware; it lets unauthenticated requests
+  // pass through, individual routes enforce auth via requireAuth)
   app.use('/v1/*', authMiddleware);
   app.route('/v1', apiRoutes);
 

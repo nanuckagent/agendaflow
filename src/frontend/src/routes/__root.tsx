@@ -4,7 +4,7 @@ import { Header } from '@/components/layout/Header.js';
 import { Sidebar } from '@/components/layout/Sidebar.js';
 import '@/i18n/index.js';
 
-export const rootRoute = createRootRoute({
+export const Route = createRootRoute({
   component: RootLayout,
 });
 
@@ -28,7 +28,7 @@ function RootLayout() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden lg:pl-64">
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 overflow-y-auto">

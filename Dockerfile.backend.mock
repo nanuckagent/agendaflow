@@ -1,0 +1,130 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache dumb-init curl
+
+# Create a mock backend API that simulates the AgendaFlow API
+RUN cat > server.js << 'EOJS'
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = url.pathname;
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  // Health endpoints
+  if (path === '/healthz') {
+    res.writeHead(200);
+    res.end(JSON.stringify({ status: 'ok', service: 'agendaflow-api', timestamp: new Date().toISOString() }));
+    return;
+  }
+
+  if (path === '/readyz') {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      status: 'ready',
+      checks: { database: 'ok', redis: 'ok', service: 'ok' },
+      timestamp: new Date().toISOString()
+    }));
+    return;
+  }
+
+  if (path === '/metrics') {
+    res.writeHead(200);
+    res.end('# HELP agendaflow_requests_total Total requests\n# TYPE agendaflow_requests_total counter\nagendaflow_requests_total 1\n');
+    return;
+  }
+
+  // API routes
+  if (path === '/v1/auth/login' && req.method === 'POST') {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      success: true,
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U',
+      user: { id: '1', email: 'test@agendaflow.local', name: 'Test User' }
+    }));
+    return;
+  }
+
+  if (path.startsWith('/v1/workspaces')) {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      data: [
+        {
+          id: '1',
+          name: 'My Workspace',
+          slug: 'my-workspace',
+          description: 'Test workspace',
+          createdAt: new Date().toISOString(),
+          members: 1
+        }
+      ],
+      pagination: { total: 1, page: 1, limit: 10 }
+    }));
+    return;
+  }
+
+  if (path.startsWith('/v1/appointments')) {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      data: [
+        {
+          id: '1',
+          title: 'Meeting',
+          startTime: new Date().toISOString(),
+          endTime: new Date(Date.now() + 3600000).toISOString(),
+          status: 'scheduled',
+          workspaceId: '1'
+        }
+      ],
+      pagination: { total: 1, page: 1, limit: 10 }
+    }));
+    return;
+  }
+
+  if (path.startsWith('/v1/professionals')) {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      data: [
+        {
+          id: '1',
+          name: 'John Professional',
+          email: 'john@agendaflow.local',
+          workspaceId: '1',
+          availability: 'available'
+        }
+      ],
+      pagination: { total: 1, page: 1, limit: 10 }
+    }));
+    return;
+  }
+
+  // Default 404
+  res.writeHead(404);
+  res.end(JSON.stringify({ error: 'Not found', path: path }));
+});
+
+const PORT = process.env.PORT || 8000;
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`AgendaFlow API Mock listening on port ${PORT}`);
+});
+EOJS
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+  CMD curl -f http://127.0.0.1:8000/healthz || exit 1
+
+EXPOSE 8000
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server.js"]

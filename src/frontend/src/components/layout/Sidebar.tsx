@@ -11,6 +11,7 @@ import {
   Briefcase,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth.js';
 
 interface SidebarProps {
@@ -28,30 +29,31 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const navItems: NavItem[] = [
     {
-      label: 'Dashboard',
+      label: t('nav.dashboard'),
       href: '/dashboard',
       icon: <LayoutDashboard size={20} />,
     },
     {
-      label: 'Appointments',
+      label: t('nav.appointments'),
       href: '/dashboard/appointments',
       icon: <Calendar size={20} />,
     },
     {
-      label: 'Professionals',
+      label: t('nav.professionals'),
       href: '/dashboard/professionals',
       icon: <Users size={20} />,
     },
     {
-      label: 'Services',
+      label: t('nav.services'),
       href: '/dashboard/services',
       icon: <Briefcase size={20} />,
     },
     {
-      label: 'Settings',
+      label: t('nav.settings'),
       href: '/dashboard/settings',
       icon: <Settings size={20} />,
     },
@@ -86,11 +88,11 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
         <div className="h-screen flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-gray-700 flex items-center justify-between">
-            <h2 className="text-xl font-bold">Menu</h2>
+            <h2 className="text-xl font-bold">{t('common.menu')}</h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-800 rounded-lg lg:hidden"
-              aria-label="Close menu"
+              aria-label={t('common.close')}
             >
               <X size={20} />
             </button>
@@ -121,7 +123,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
           <div className="p-4 border-t border-gray-700">
             {user && (
               <div className="px-4 py-3 rounded-lg bg-gray-800">
-                <p className="text-sm text-gray-300">Logged in as</p>
+                <p className="text-sm text-gray-300">{t('common.loggedInAs')}</p>
                 <p className="text-sm font-medium text-white truncate">{user.email}</p>
               </div>
             )}

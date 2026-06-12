@@ -9,8 +9,7 @@ import en from './en.json';
 
 // Get language from localStorage or browser language
 const savedLanguage = localStorage.getItem('language');
-const browserLanguage = navigator.language.split('-')[0];
-const defaultLanguage = savedLanguage || (browserLanguage === 'pt' ? 'pt-BR' : 'en');
+const defaultLanguage = savedLanguage || 'pt-BR';
 
 i18n.use(initReactI18next).init({
   resources: {

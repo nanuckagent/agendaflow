@@ -3,6 +3,7 @@
  */
 
 import { Hono } from 'hono';
+import { setCookie } from 'hono/cookie';
 import { eq } from 'drizzle-orm';
 import type { RequestVariables } from '../../app.js';
 import { users } from '../../db/schema/index.js';
@@ -75,7 +76,7 @@ loginRoutes.post('/login', async (c) => {
     );
 
     // Set httpOnly cookies
-    c.cookie('accessToken', tokens.accessToken, {
+    setCookie(c,'accessToken', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
@@ -83,7 +84,7 @@ loginRoutes.post('/login', async (c) => {
       path: '/',
     });
 
-    c.cookie('refreshToken', tokens.refreshToken, {
+    setCookie(c,'refreshToken', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
@@ -194,7 +195,7 @@ loginRoutes.post('/refresh', async (c) => {
     const newRefreshToken = await authService.rotateRefreshToken(refreshToken, user.id);
 
     // Set new cookies
-    c.cookie('accessToken', tokens.accessToken, {
+    setCookie(c,'accessToken', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
@@ -202,7 +203,7 @@ loginRoutes.post('/refresh', async (c) => {
       path: '/',
     });
 
-    c.cookie('refreshToken', newRefreshToken, {
+    setCookie(c,'refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
@@ -253,13 +254,13 @@ loginRoutes.post('/logout', async (c) => {
     }
 
     // Clear cookies
-    c.cookie('accessToken', '', {
+    setCookie(c,'accessToken', '', {
       httpOnly: true,
       maxAge: 0,
       path: '/',
     });
 
-    c.cookie('refreshToken', '', {
+    setCookie(c,'refreshToken', '', {
       httpOnly: true,
       maxAge: 0,
       path: '/',

@@ -26,9 +26,9 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Add workspace header if available
+    // Add workspace header if available (explicit per-call header takes precedence)
     const workspaceId = useWorkspaceStore.getState().activeWorkspaceId;
-    if (workspaceId) {
+    if (workspaceId && !headers['X-Workspace-Id']) {
       headers['X-Workspace-Id'] = workspaceId;
     }
 

@@ -47,7 +47,7 @@ export class AuthService {
       role,
     };
 
-    const accessToken = await new SignJWT(payload)
+    const accessToken = await new SignJWT({ ...payload })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime(`${this.accessTokenExpiry}`)
       .sign(secret);
@@ -78,7 +78,7 @@ export class AuthService {
    */
   async verifyPassword(password: string, hash_: string): Promise<boolean> {
     try {
-      return await verify(hash_);
+      return await verify(hash_, password);
     } catch {
       return false;
     }

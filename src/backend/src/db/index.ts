@@ -2,12 +2,12 @@
  * Database connection and schema initialization
  */
 
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { env } from '../env.js';
 import * as schema from './schema/index.js';
 
-let db: ReturnType<typeof drizzle> | null = null;
+let db: PostgresJsDatabase<typeof schema> | null = null;
 let client: ReturnType<typeof postgres> | null = null;
 
 export async function createDb() {
@@ -40,4 +40,4 @@ export async function closeDb() {
 }
 
 export { schema };
-export type Database = ReturnType<typeof drizzle>;
+export type Database = PostgresJsDatabase<typeof schema>;

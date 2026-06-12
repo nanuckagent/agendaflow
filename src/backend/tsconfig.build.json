@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "../../dist/backend",
     "baseUrl": ".",
-    "rootDir": "."
+    "rootDir": ".",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]

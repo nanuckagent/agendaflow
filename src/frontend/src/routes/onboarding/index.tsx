@@ -4,6 +4,7 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCreateWorkspace } from '@/queries/workspaces.js';
 import { useWorkspaceStore } from '@/stores/workspace-store.js';
 import { BrandingPreview } from '@/components/workspace/BrandingPreview.js';
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/onboarding/')({
 });
 
 function OnboardingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const { addWorkspace, setActiveWorkspace } = useWorkspaceStore();
@@ -39,7 +41,7 @@ function OnboardingPage() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      alert('Please enter a workspace name');
+      alert(t('onboarding.enterName'));
       return;
     }
 
@@ -73,9 +75,9 @@ function OnboardingPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900">Create Your Workspace</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('onboarding.title')}</h1>
           <p className="text-gray-600 mt-2">
-            Set up your workspace with a name and branding colors
+            {t('onboarding.subtitle')}
           </p>
         </div>
       </div>
@@ -86,9 +88,9 @@ function OnboardingPage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
             <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
             <div>
-              <h3 className="font-semibold text-red-900">Error creating workspace</h3>
+              <h3 className="font-semibold text-red-900">{t('onboarding.errorCreating')}</h3>
               <p className="text-red-700 text-sm">
-                {error instanceof Error ? error.message : 'An error occurred'}
+                {error instanceof Error ? error.message : t('onboarding.genericError')}
               </p>
             </div>
           </div>
@@ -97,16 +99,16 @@ function OnboardingPage() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic info */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Workspace Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('settings.workspaceInfo')}</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="label-base">Workspace Name *</label>
+                <label className="label-base">{t('onboarding.workspaceName')} *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Beauty Salon, Dental Clinic"
+                  placeholder={t('onboarding.namePlaceholder')}
                   className="input-base w-full"
                   required
                 />
@@ -114,7 +116,7 @@ function OnboardingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label-base">Timezone</label>
+                  <label className="label-base">{t('settings.timezone')}</label>
                   <select
                     value={formData.timezone}
                     onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
@@ -132,7 +134,7 @@ function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="label-base">Currency</label>
+                  <label className="label-base">{t('settings.currency')}</label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -152,7 +154,7 @@ function OnboardingPage() {
 
           {/* Branding */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Branding & Colors</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">{t('onboarding.brandingColors')}</h2>
 
             <BrandingPreview
               primaryColor={formData.primaryColor}
@@ -177,14 +179,14 @@ function OnboardingPage() {
               onClick={() => navigate({ to: '/' })}
               className="btn-secondary"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={isPending || !formData.name.trim()}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isPending ? 'Creating...' : 'Create Workspace'}
+              {isPending ? t('onboarding.creating') : t('onboarding.create')}
             </button>
           </div>
         </form>

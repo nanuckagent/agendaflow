@@ -1,0 +1,38 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache dumb-init curl
+
+# Create a simple test API that responds to health checks
+RUN cat > server.js << 'EOF'
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.url === '/healthz' || req.url === '/readyz') {
+    res.writeHead(200);
+    res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+  } else if (req.url === '/metrics') {
+    res.writeHead(200);
+    res.end('# Placeholder metrics\n');
+  } else {
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: 'Not found' }));
+  }
+});
+
+const PORT = process.env.PORT || 8000;
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`Server listening on port ${PORT}`);
+});
+EOF
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+  CMD curl -f http://127.0.0.1:8000/healthz || exit 1
+
+EXPOSE 8000
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server.js"]

@@ -16,7 +16,14 @@
     "previous": "Previous",
     "confirm": "Confirm",
     "logout": "Logout",
-    "welcome": "Welcome"
+    "welcome": "Welcome",
+    "menu": "Menu",
+    "loggedInAs": "Logged in as",
+    "backToHome": "Back to Home",
+    "actions": "Actions",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "viewAll": "View All"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -37,7 +44,21 @@
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
     "alreadyHaveAccount": "Already have an account?",
-    "googleOAuthRedirect": "Redirecting to Google..."
+    "googleOAuthRedirect": "Redirecting to Google...",
+    "signInToAccount": "Sign in to your account",
+    "invalidCredentials": "Invalid email or password",
+    "connectionError": "Connection error. Please try again.",
+    "emailPlaceholder": "you@company.com",
+    "signingIn": "Signing in...",
+    "oauthError": "OAuth Error: {{error}}",
+    "noAuthCode": "No authorization code received",
+    "oauthExchangeFailed": "OAuth exchange failed",
+    "invalidServerResponse": "Invalid response from server",
+    "authFailed": "Authentication failed",
+    "authErrorTitle": "Authentication Error",
+    "redirectingHome": "Redirecting to home page...",
+    "authenticating": "Authenticating...",
+    "authenticatingWait": "Please wait while we authenticate your account"
   },
   "onboarding": {
     "title": "Create Your Workspace",
@@ -49,7 +70,13 @@
     "uploadLogo": "Upload Logo",
     "create": "Create Workspace",
     "namePlaceholder": "e.g., Beauty Salon",
-    "success": "Workspace created successfully!"
+    "success": "Workspace created successfully!",
+    "subtitle": "Set up your workspace with a name and branding colors",
+    "brandingColors": "Branding & Colors",
+    "creating": "Creating...",
+    "errorCreating": "Error creating workspace",
+    "genericError": "An error occurred",
+    "enterName": "Please enter a workspace name"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -58,7 +85,18 @@
     "averageRating": "Average Rating",
     "nextBooking": "Next Booking",
     "recentBookings": "Recent Bookings",
-    "noAppointments": "No appointments"
+    "noAppointments": "No appointments",
+    "welcomeMessage": "Welcome back! Here's what's happening with your business today.",
+    "changeFromYesterday": "+2 from yesterday",
+    "changeThisMonth": "+12% this month",
+    "ratingOutOf": "4.8 out of 5.0",
+    "inOneHour": "in 1 hour",
+    "appointmentsThisWeek": "Appointments This Week",
+    "quickStats": "Quick Stats",
+    "completionRate": "Completion Rate",
+    "cancellationRate": "Cancellation Rate",
+    "noShowRate": "No-show Rate",
+    "noAppointmentsToday": "No appointments today"
   },
   "appointments": {
     "title": "Appointments",
@@ -84,7 +122,14 @@
     "filters": "Filters",
     "filterByProfessional": "Filter by Professional",
     "filterByStatus": "Filter by Status",
-    "dateRange": "Date Range"
+    "dateRange": "Date Range",
+    "subtitle": "Manage all your appointments and bookings",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "allStatuses": "All Statuses",
+    "dateTime": "Date & Time",
+    "confirmCancel": "Are you sure you want to cancel this appointment?",
+    "noneFound": "No appointments found"
   },
   "professionals": {
     "title": "Professionals",
@@ -101,7 +146,19 @@
     "deactivate": "Deactivate",
     "activate": "Activate",
     "email": "Email",
-    "phone": "Phone"
+    "phone": "Phone",
+    "subtitle": "Manage your team members and professionals",
+    "addNew": "Add New Professional",
+    "update": "Update Professional",
+    "create": "Create Professional",
+    "fillNameSpecialty": "Please fill in name and specialty",
+    "namePlaceholder": "Full name",
+    "specialtyPlaceholder": "e.g., Hairstylist, Massage Therapist",
+    "emailPlaceholder": "Email address",
+    "phonePlaceholder": "Phone number",
+    "bioPlaceholder": "Professional bio...",
+    "empty": "No professionals yet",
+    "emptyHint": "Add your first professional to get started"
   },
   "services": {
     "title": "Services",
@@ -113,7 +170,20 @@
     "duration": "Duration",
     "price": "Price",
     "minutes": "minutes",
-    "category": "Category"
+    "category": "Category",
+    "subtitle": "Manage your service offerings",
+    "addNew": "Add New Service",
+    "update": "Update Service",
+    "create": "Create Service",
+    "fillRequired": "Please fill in all required fields correctly",
+    "confirmDelete": "Are you sure you want to delete this service?",
+    "namePlaceholder": "e.g., Haircut, Massage",
+    "durationMinutes": "Duration (minutes)",
+    "priceCurrency": "Price ($)",
+    "categoryPlaceholder": "e.g., Hair, Spa",
+    "descriptionPlaceholder": "Service description...",
+    "empty": "No services yet",
+    "emptyHint": "Add your first service to get started"
   },
   "settings": {
     "title": "Settings",
@@ -131,7 +201,21 @@
     "admin": "Admin",
     "user": "User",
     "remove": "Remove",
-    "invite": "Invite"
+    "invite": "Invite",
+    "subtitle": "Manage your workspace settings and preferences",
+    "updated": "Settings updated",
+    "brandingUpdated": "Your branding has been successfully updated",
+    "workspaceBranding": "Workspace Branding",
+    "teamMembers": "Team Members",
+    "inviteTeamMember": "Invite Team Member",
+    "memberEmailPlaceholder": "colleague@example.com",
+    "currentMembers": "Current Members",
+    "you": "You",
+    "workspaceInfo": "Workspace Information",
+    "workspaceId": "Workspace ID",
+    "dangerZone": "Danger Zone",
+    "dangerZoneWarning": "These actions are permanent and cannot be undone.",
+    "deleteWorkspace": "Delete Workspace"
   },
   "booking": {
     "title": "Book an Appointment",
@@ -151,7 +235,23 @@
     "bookingConfirmed": "Booking Confirmed!",
     "bookingCode": "Booking Code",
     "confirmationEmail": "A confirmation email has been sent to",
-    "viewBooking": "View Booking Details"
+    "viewBooking": "View Booking Details",
+    "subtitle": "Choose your professional, service, and preferred time",
+    "stepOf": "Step {{step}} of {{total}}",
+    "date": "Date",
+    "time": "Time",
+    "selectTime": "Select a time",
+    "fullName": "Full Name",
+    "notes": "Notes",
+    "notesPlaceholder": "Any special requests or information?",
+    "noProfessionals": "No professionals available",
+    "noServices": "No services available",
+    "confirming": "Confirming...",
+    "successMessage": "Your appointment has been successfully booked.",
+    "loadingWorkspace": "Loading booking page...",
+    "workspaceNotFound": "Booking page not found. Please check your link.",
+    "fillRequired": "Please fill in all required fields",
+    "selectDateTime": "Please select a date and time"
   },
   "validation": {
     "required": "This field is required",
@@ -169,5 +269,31 @@
     "notFound": "Not found",
     "serverError": "Server error",
     "tryAgain": "Try again"
+  },
+  "landing": {
+    "heroTitle": "Intelligent Scheduling",
+    "heroTitleHighlight": "Made Simple",
+    "heroSubtitle": "AgendaFlow is a modern appointment scheduling platform designed for service businesses. Manage professionals, services, and appointments with ease.",
+    "getStarted": "Get Started",
+    "featureSchedulingTitle": "Smart Scheduling",
+    "featureSchedulingDesc": "Easy appointment booking with real-time availability",
+    "featureTeamTitle": "Team Management",
+    "featureTeamDesc": "Manage professionals and their specialties",
+    "featureCustomizationTitle": "Customization",
+    "featureCustomizationDesc": "Brand your workspace with custom colors and logo",
+    "featureAnalyticsTitle": "Analytics",
+    "featureAnalyticsDesc": "Track appointments, revenue, and ratings",
+    "ctaTitle": "Ready to streamline your scheduling?",
+    "ctaSubtitle": "Join hundreds of service businesses using AgendaFlow",
+    "signUpNow": "Sign Up Now",
+    "footerTagline": "Intelligent scheduling platform for service businesses",
+    "footerProduct": "Product",
+    "footerFeatures": "Features",
+    "footerPricing": "Pricing",
+    "footerLegal": "Legal",
+    "footerPrivacy": "Privacy",
+    "footerTerms": "Terms",
+    "footerContact": "Contact",
+    "copyright": "© 2024 AgendaFlow. All rights reserved."
   }
 }

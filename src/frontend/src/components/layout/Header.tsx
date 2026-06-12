@@ -7,6 +7,7 @@ import { useWorkspace } from '@/hooks/useWorkspace.js';
 import { useNavigate } from '@tanstack/react-router';
 import { Menu, LogOut, User, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -18,6 +19,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { activeWorkspaceId, workspaces, setActiveWorkspace, currentWorkspace } = useWorkspace();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
@@ -109,7 +111,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 first:rounded-t-none last:rounded-b-none"
                 >
                   <User size={16} />
-                  Profile
+                  {t('nav.profile')}
                 </button>
                 <button
                   onClick={() => {
@@ -119,7 +121,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-200"
                 >
                   <LogOut size={16} />
-                  Logout
+                  {t('common.logout')}
                 </button>
               </div>
             )}

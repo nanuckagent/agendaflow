@@ -55,7 +55,10 @@ export class AuditService {
     }
   ) {
     return this.db.query.auditLogs.findMany({
-      where: (logs: any) => logs.workspaceId === workspaceId,
+      where: (logs, { eq }) => eq(logs.workspaceId, workspaceId),
+      limit: filters?.limit ?? 100,
+      offset: filters?.offset ?? 0,
+      orderBy: (logs, { desc }) => desc(logs.createdAt),
     });
   }
 }

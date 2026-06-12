@@ -4,6 +4,7 @@
  */
 
 import { jwtVerify, errors } from 'jose';
+import { getCookie } from 'hono/cookie';
 import type { Database } from '../db/index.js';
 import type Redis from 'ioredis';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -23,7 +24,7 @@ export function createAuthMiddleware(
 ): MiddlewareHandler<{ Variables: RequestVariables }> {
   return async (c: Context<{ Variables: RequestVariables }>, next) => {
     const authHeader = c.req.header('Authorization');
-    const cookieToken = c.req.cookie('accessToken');
+    const cookieToken = getCookie(c, 'accessToken');
 
     const token = authHeader?.replace('Bearer ', '') || cookieToken;
 
@@ -40,7 +41,7 @@ export function createAuthMiddleware(
       const secret = new TextEncoder().encode(process.env.JWT_SECRET || '');
       const verified = await jwtVerify(token, secret);
 
-      const payload = verified.payload as JWTPayload;
+      const payload = verified.payload as unknown as JWTPayload;
 
       c.set('userId', payload.userId);
       c.set('workspaceId', payload.workspaceId);
@@ -94,10 +95,10 @@ export async function requireAuth(c: Context<{ Variables: RequestVariables }>) {
   const workspaceId = c.get('workspaceId');
 
   if (!userId || !workspaceId) {
-    throw {
-      status: 401,
-      message: 'Authentication required',
-    };
+    // Error instance with .status so both route catches and app.onError map it to 401
+    const error = new Error('Authentication required');
+    (error as Error & { status: number }).status = 401;
+    throw error;
   }
 
   return { userId, workspaceId };

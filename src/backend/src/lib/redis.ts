@@ -12,7 +12,8 @@ export async function createRedis() {
     return redis;
   }
 
-  redis = new Redis(env.REDIS_URL);
+  // BullMQ workers require maxRetriesPerRequest: null
+  redis = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 
   redis.on('connect', () => {
     console.log('Redis connected');

@@ -39,13 +39,13 @@ async function startApi() {
     const app = createApp({ db, redis, env, logger });
 
     const port = parseInt(env.PORT || '8000', 10);
-    logger.info(`API server listening on http://127.0.0.1:${port}`);
+    logger.info(`API server listening on http://0.0.0.0:${port}`);
 
     serve(
       {
         fetch: app.fetch,
         port,
-        hostname: '127.0.0.1',
+        hostname: '0.0.0.0',
       },
       (info) => {
         logger.info(`Server started on ${info.address}:${info.port}`);

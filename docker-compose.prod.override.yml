@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./infra/docker/backend.Dockerfile
+    image: agendaflow-backend:0.1.0
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./infra/docker/backend.Dockerfile
+    image: agendaflow-backend:0.1.0
+    # worker role serves no HTTP; image HEALTHCHECK (curl /healthz) would always fail
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "node"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./infra/docker/frontend.Dockerfile
+    image: agendaflow-frontend:0.1.0

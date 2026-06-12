@@ -97,14 +97,19 @@ services:
       - traefik.docker.network=proxy
 
       # ────────────────────────────────────────────────────────────────────────────
+      # Single Backend Service (all routes use this)
+      # ────────────────────────────────────────────────────────────────────────────
+      - traefik.http.services.agf-backend.loadbalancer.server.port=8000
+
+      # ────────────────────────────────────────────────────────────────────────────
       # Router: Health & Readiness (public, no auth)
       # ────────────────────────────────────────────────────────────────────────────
       - traefik.http.routers.agf-health.entrypoints=https
       - traefik.http.routers.agf-health.rule=Host(`${DOMAIN:-agendaflow.nanuck.com.br}`) && (PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
       - traefik.http.routers.agf-health.priority=110
+      - traefik.http.routers.agf-health.service=agf-backend
       - traefik.http.routers.agf-health.tls=true
       - traefik.http.routers.agf-health.tls.certresolver=cloudflare
-      - traefik.http.services.agf-health.loadbalancer.server.port=8000
 
       # ────────────────────────────────────────────────────────────────────────────
       # Router: Metrics (protected by IP whitelist)
@@ -112,10 +117,10 @@ services:
       - traefik.http.routers.agf-metrics.entrypoints=https
       - traefik.http.routers.agf-metrics.rule=Host(`${DOMAIN:-agendaflow.nanuck.com.br}`) && PathPrefix(`/metrics`)
       - traefik.http.routers.agf-metrics.priority=105
+      - traefik.http.routers.agf-metrics.service=agf-backend
+      - traefik.http.routers.agf-metrics.middlewares=ip-whitelist-admin@file
       - traefik.http.routers.agf-metrics.tls=true
       - traefik.http.routers.agf-metrics.tls.certresolver=cloudflare
-      - traefik.http.routers.agf-metrics.middlewares=ip-whitelist-admin@file
-      - traefik.http.services.agf-metrics.loadbalancer.server.port=8000
 
       # ────────────────────────────────────────────────────────────────────────────
       # Router: API v1 (main application routes)
@@ -123,9 +128,9 @@ services:
       - traefik.http.routers.agf-api.entrypoints=https
       - traefik.http.routers.agf-api.rule=Host(`${DOMAIN:-agendaflow.nanuck.com.br}`) && PathPrefix(`/v1`)
       - traefik.http.routers.agf-api.priority=100
+      - traefik.http.routers.agf-api.service=agf-backend
       - traefik.http.routers.agf-api.tls=true
       - traefik.http.routers.agf-api.tls.certresolver=cloudflare
-      - traefik.http.services.agf-api.loadbalancer.server.port=8000
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
