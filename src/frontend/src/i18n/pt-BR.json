@@ -61,7 +61,16 @@
     "authErrorTitle": "Erro de Autenticação",
     "redirectingHome": "Redirecionando para a página inicial...",
     "authenticating": "Autenticando...",
-    "authenticatingWait": "Aguarde enquanto autenticamos sua conta"
+    "authenticatingWait": "Aguarde enquanto autenticamos sua conta",
+    "createYourAccount": "Crie sua conta grátis",
+    "yourName": "Seu nome",
+    "yourNamePlaceholder": "ex: Maria Silva",
+    "businessName": "Nome do negócio",
+    "businessNamePlaceholder": "ex: Studio Maria",
+    "createAccount": "Criar conta",
+    "creatingAccount": "Criando conta...",
+    "emailInUse": "Este email já está cadastrado",
+    "passwordHint": "Mínimo de 8 caracteres"
   },
   "onboarding": {
     "title": "Criar Seu Workspace",
@@ -249,7 +258,6 @@
     "updateBranding": "Atualizar Personalização",
     "addMember": "Adicionar Membro",
     "inviteMember": "Convidar Membro",
-    "members": "Membros",
     "role": "Função",
     "owner": "Proprietário",
     "admin": "Administrador",

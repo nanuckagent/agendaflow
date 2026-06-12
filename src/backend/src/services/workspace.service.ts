@@ -120,6 +120,36 @@ export class WorkspaceService {
   }
 
   /**
+   * Generate a clean, unique URL-safe slug (no random suffix unless needed)
+   */
+  async generateUniqueSlug(name: string): Promise<string> {
+    const reserved = ['demo', 'admin', 'api', 'app', 'www', 'b'];
+
+    const base =
+      name
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'workspace';
+
+    const candidates = [base, ...Array.from({ length: 19 }, (_, i) => `${base}-${i + 2}`)];
+
+    for (const candidate of candidates) {
+      if (reserved.includes(candidate)) continue;
+      const existing = await this.db.query.workspaces.findFirst({
+        where: eq(workspaces.slug, candidate),
+        columns: { id: true },
+      });
+      if (!existing) return candidate;
+    }
+
+    return `${base}-${generateToken(4)}`;
+  }
+
+  /**
    * Generate URL-safe slug from name
    */
   private generateSlug(name: string): string {

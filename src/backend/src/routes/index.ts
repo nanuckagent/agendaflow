@@ -5,7 +5,9 @@
 import { Hono } from 'hono';
 import type { RequestVariables } from '../app.js';
 import { loginRoutes } from './auth/login.js';
+import { registerRoutes } from './auth/register.js';
 import { googleOAuthRoutes } from './auth/oauth-google.js';
+import { rateLimit } from '../lib/rate-limit.js';
 import { workspaceRoutes } from './workspaces/index.js';
 import { adminAppointmentRoutes } from './appointments/admin.js';
 import { publicAppointmentRoutes } from './appointments/public.js';
@@ -17,8 +19,11 @@ import { mercadopagoRoutes } from './payment/mercadopago.js';
 
 export const apiRoutes = new Hono<{ Variables: RequestVariables }>();
 
-// Auth: /v1/auth/login, /v1/auth/refresh, /v1/auth/logout, /v1/auth/google
+// Auth: /v1/auth/login, /v1/auth/register, /v1/auth/refresh, /v1/auth/logout, /v1/auth/google
+apiRoutes.use('/auth/register', rateLimit({ prefix: 'register', limit: 5, windowSec: 900 }));
+apiRoutes.use('/auth/login', rateLimit({ prefix: 'login', limit: 10, windowSec: 900 }));
 apiRoutes.route('/auth', loginRoutes);
+apiRoutes.route('/auth', registerRoutes);
 apiRoutes.route('/auth', googleOAuthRoutes);
 
 // Workspaces: /v1/workspaces, /v1/user/workspaces

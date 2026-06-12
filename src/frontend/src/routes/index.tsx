@@ -24,8 +24,12 @@ function LandingPage() {
     }
   }, [isLoggedIn, navigate]);
 
-  const handleGoogleLogin = () => {
+  const goToLogin = () => {
     navigate({ to: '/login' });
+  };
+
+  const goToRegister = () => {
+    navigate({ to: '/register' });
   };
 
   return (
@@ -36,7 +40,7 @@ function LandingPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">AgendaFlow</h1>
             <button
-              onClick={handleGoogleLogin}
+              onClick={goToLogin}
               className="btn-primary"
             >
               {t('auth.login')}
@@ -57,7 +61,7 @@ function LandingPage() {
             {t('landing.heroSubtitle')}
           </p>
           <button
-            onClick={handleGoogleLogin}
+            onClick={goToRegister}
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg"
           >
             {t('landing.getStarted')}
@@ -107,7 +111,7 @@ function LandingPage() {
             {t('landing.ctaSubtitle')}
           </p>
           <button
-            onClick={handleGoogleLogin}
+            onClick={goToRegister}
             className="inline-block px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
           >
             {t('landing.signUpNow')}

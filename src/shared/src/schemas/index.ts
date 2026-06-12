@@ -9,9 +9,13 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(2, 'Name is required').max(150),
+  email: z
+    .string()
+    .email('Invalid email address')
+    .transform((e) => e.toLowerCase().trim()),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  businessName: z.string().min(2, 'Business name is required').max(255),
 });
 
 // Event schemas

@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { RequestVariables } from '../../app.js';
 import { workspaces } from '../../db/schema/index.js';
 import { ProfessionalService } from '../../services/professional.service.js';
@@ -27,11 +27,28 @@ function missingWorkspaceHeader(c: any) {
 }
 
 // GET /v1/public/workspaces/:slug - Resolve workspace by slug (public branding info only)
+// logoUrl is served by a dedicated endpoint: base64 logos stored in the DB would
+// bloat this payload to hundreds of KB per request.
 publicDiscoveryRoutes.get('/public/workspaces/:slug', async (c) => {
   const { slug } = c.req.param();
 
   const workspace = await (c as any).db.query.workspaces.findFirst({
     where: eq(workspaces.slug, slug),
+    columns: {
+      id: true,
+      slug: true,
+      name: true,
+      timezone: true,
+      currency: true,
+      primaryColor: true,
+      sidebarColor: true,
+      accentColor: true,
+      storeEnabled: true,
+      whatsappNumber: true,
+    },
+    extras: {
+      hasLogo: sql<boolean>`(logo_url is not null)`.as('has_logo'),
+    },
   });
 
   if (!workspace) {
@@ -56,12 +73,58 @@ publicDiscoveryRoutes.get('/public/workspaces/:slug', async (c) => {
       primaryColor: workspace.primaryColor,
       sidebarColor: workspace.sidebarColor,
       accentColor: workspace.accentColor,
-      logoUrl: workspace.logoUrl,
+      logoUrl: workspace.hasLogo ? `/v1/public/workspaces/${workspace.slug}/logo` : null,
       storeEnabled: workspace.storeEnabled,
       whatsappNumber: workspace.whatsappNumber,
     },
     200
   );
+});
+
+// GET /v1/public/workspaces/:slug/logo - Serve workspace logo (binary, cacheable)
+publicDiscoveryRoutes.get('/public/workspaces/:slug/logo', async (c) => {
+  const { slug } = c.req.param();
+
+  const workspace = await (c as any).db.query.workspaces.findFirst({
+    where: eq(workspaces.slug, slug),
+    columns: { logoUrl: true },
+  });
+
+  if (!workspace?.logoUrl) {
+    return c.json(
+      {
+        type: 'https://agendaflow.local/errors/not-found',
+        title: 'Not Found',
+        status: 404,
+        detail: 'Logo not found',
+      },
+      404
+    );
+  }
+
+  if (/^https?:\/\//.test(workspace.logoUrl)) {
+    return c.redirect(workspace.logoUrl, 302);
+  }
+
+  const match = workspace.logoUrl.match(/^data:(image\/[a-z+.-]+);base64,(.+)$/s);
+  if (!match) {
+    return c.json(
+      {
+        type: 'https://agendaflow.local/errors/not-found',
+        title: 'Not Found',
+        status: 404,
+        detail: 'Logo not found',
+      },
+      404
+    );
+  }
+
+  const [, mime, payload] = match;
+  const buffer = Buffer.from(payload, 'base64');
+
+  c.header('Content-Type', mime);
+  c.header('Cache-Control', 'public, max-age=86400');
+  return c.body(buffer);
 });
 
 // GET /v1/public/availability - Available slots for a professional on a date

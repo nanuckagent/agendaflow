@@ -67,6 +67,11 @@ loginRoutes.post('/login', async (c) => {
       );
     }
 
+    await (c as any).db
+      .update(users)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(users.id, user.id));
+
     // Generate tokens
     const tokens = await authService.generateTokens(
       user.id,

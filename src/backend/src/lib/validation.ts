@@ -122,11 +122,29 @@ export type WorkspaceInput = z.infer<typeof workspaceSchema>;
  * Login schema
  */
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: z
+    .string()
+    .email()
+    .transform((e) => e.toLowerCase().trim()),
   password: z.string().min(6),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+/**
+ * Self-service registration schema
+ */
+export const registerSchema = z.object({
+  name: z.string().min(2).max(150),
+  email: z
+    .string()
+    .email()
+    .transform((e) => e.toLowerCase().trim()),
+  password: z.string().min(8).max(128),
+  businessName: z.string().min(2).max(255),
+});
+
+export type RegisterInput = z.infer<typeof registerSchema>;
 
 /**
  * Safe parse with error handling

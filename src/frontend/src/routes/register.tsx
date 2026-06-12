@@ -1,5 +1,5 @@
 /**
- * Email/password login route
+ * Self-service registration route
  */
 
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -10,16 +10,18 @@ import { useAuthStore } from '@/stores/auth-store.js';
 import { useWorkspaceStore } from '@/stores/workspace-store.js';
 import { ArrowRight } from 'lucide-react';
 
-export const Route = createFileRoute('/login')({
-  component: LoginPage,
+export const Route = createFileRoute('/register')({
+  component: RegisterPage,
 });
 
-function LoginPage() {
+function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const { setUser, setToken } = useAuthStore();
-  const { setActiveWorkspace } = useWorkspaceStore();
+  const { setActiveWorkspace, addWorkspace } = useWorkspaceStore();
+  const [name, setName] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -38,19 +40,23 @@ function LoginPage() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || ''}/v1/auth/login`,
+        `${import.meta.env.VITE_API_URL || ''}/v1/auth/register`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ name, businessName, email, password }),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.detail || t('auth.invalidCredentials'));
+        if (response.status === 409) {
+          setError(t('auth.emailInUse'));
+        } else {
+          setError(data.detail || t('auth.connectionError'));
+        }
         return;
       }
 
@@ -61,6 +67,13 @@ function LoginPage() {
         name: [data.user.firstName, data.user.lastName].filter(Boolean).join(' '),
         createdAt: '',
         updatedAt: '',
+      });
+      addWorkspace({
+        id: data.workspace.id,
+        slug: data.workspace.slug,
+        name: data.workspace.name,
+        timezone: 'America/Sao_Paulo',
+        currency: 'BRL',
       });
       setActiveWorkspace(data.user.workspaceId);
 
@@ -73,11 +86,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">AgendaFlow</h1>
-          <p className="text-gray-600 mt-2">{t('auth.signInToAccount')}</p>
+          <p className="text-gray-600 mt-2">{t('auth.createYourAccount')}</p>
         </div>
 
         <form
@@ -89,6 +102,40 @@ function LoginPage() {
               {error}
             </div>
           )}
+
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.yourName')}
+            </label>
+            <input
+              id="name"
+              type="text"
+              required
+              minLength={2}
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder={t('auth.yourNamePlaceholder')}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.businessName')}
+            </label>
+            <input
+              id="businessName"
+              type="text"
+              required
+              minLength={2}
+              autoComplete="organization"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder={t('auth.businessNamePlaceholder')}
+            />
+          </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -114,12 +161,14 @@ function LoginPage() {
               id="password"
               type="password"
               required
-              autoComplete="current-password"
+              minLength={8}
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               placeholder="••••••••"
             />
+            <p className="text-xs text-gray-500 mt-1">{t('auth.passwordHint')}</p>
           </div>
 
           <button
@@ -127,14 +176,14 @@ function LoginPage() {
             disabled={loading}
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
           >
-            {loading ? t('auth.signingIn') : t('auth.login')}
+            {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
             {!loading && <ArrowRight size={20} />}
           </button>
 
           <p className="text-sm text-gray-600 text-center">
-            {t('auth.noAccount')}{' '}
-            <Link to="/register" className="text-blue-600 font-medium hover:underline">
-              {t('auth.signup')}
+            {t('auth.alreadyHaveAccount')}{' '}
+            <Link to="/login" className="text-blue-600 font-medium hover:underline">
+              {t('auth.login')}
             </Link>
           </p>
         </form>
