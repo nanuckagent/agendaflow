@@ -12,6 +12,7 @@ import { publicAppointmentRoutes } from './appointments/public.js';
 import { publicDiscoveryRoutes } from './public/index.js';
 import { professionalRoutes } from './professionals/index.js';
 import { serviceRoutes } from './services/index.js';
+import { productRoutes } from './products/index.js';
 import { mercadopagoRoutes } from './payment/mercadopago.js';
 
 export const apiRoutes = new Hono<{ Variables: RequestVariables }>();
@@ -33,6 +34,9 @@ apiRoutes.route('/', publicDiscoveryRoutes);
 // Professionals and services: /v1/professionals, /v1/services
 apiRoutes.route('/', professionalRoutes);
 apiRoutes.route('/', serviceRoutes);
+
+// Products (store module): /v1/products
+apiRoutes.route('/', productRoutes);
 
 // Payments: /v1/payments/mercadopago/*
 apiRoutes.route('/payments', mercadopagoRoutes);

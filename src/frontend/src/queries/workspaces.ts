@@ -15,6 +15,8 @@ export interface Workspace {
   sidebarColor?: string;
   accentColor?: string;
   logoUrl?: string;
+  storeEnabled?: boolean;
+  whatsappNumber?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -33,6 +35,8 @@ export interface UpdateBrandingRequest {
   sidebarColor?: string;
   accentColor?: string;
   logoUrl?: string;
+  storeEnabled?: boolean;
+  whatsappNumber?: string;
 }
 
 // Fetch user's workspaces

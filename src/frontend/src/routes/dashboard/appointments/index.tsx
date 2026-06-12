@@ -4,10 +4,17 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
-import { useAppointments, useCancelAppointment } from '@/queries/appointments.js';
+import {
+  useAppointments,
+  useCancelAppointment,
+  useCreateAppointment,
+  useAvailability,
+} from '@/queries/appointments.js';
+import { useProfessionals } from '@/queries/professionals.js';
+import { useServices } from '@/queries/services.js';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Plus, Trash2, Check } from 'lucide-react';
+import { Calendar, Plus, Trash2, Check, X } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
 // appointmentDate carries the literal booked date in its UTC date part;
@@ -33,6 +40,71 @@ function AppointmentsPage() {
 
   const { data: appointments = [], isLoading } = useAppointments(filters);
   const { mutate: cancelAppointment } = useCancelAppointment();
+  const { mutate: createAppointment, isPending: isCreating } = useCreateAppointment();
+  const { data: professionals = [] } = useProfessionals();
+  const { data: services = [] } = useServices();
+
+  const [showForm, setShowForm] = useState(false);
+  const emptyForm = {
+    professionalId: '',
+    serviceId: '',
+    appointmentDate: '',
+    appointmentTime: '',
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    notes: '',
+  };
+  const [newApt, setNewApt] = useState(emptyForm);
+
+  const { data: slots = [], isFetching: slotsLoading } = useAvailability(
+    newApt.professionalId,
+    newApt.serviceId,
+    newApt.appointmentDate
+  );
+
+  const selectedPro: any = professionals.find((p) => p.id === newApt.professionalId);
+  const availableServices = services.filter(
+    (s) =>
+      s.active &&
+      (!selectedPro?.serviceIds?.length || selectedPro.serviceIds.includes(s.id))
+  );
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !newApt.professionalId ||
+      !newApt.serviceId ||
+      !newApt.appointmentDate ||
+      !newApt.appointmentTime ||
+      !newApt.clientName.trim() ||
+      !newApt.clientEmail.trim() ||
+      !newApt.clientPhone.trim()
+    ) {
+      alert(t('booking.fillRequired'));
+      return;
+    }
+    createAppointment(
+      {
+        clientName: newApt.clientName.trim(),
+        clientEmail: newApt.clientEmail.trim(),
+        clientPhone: newApt.clientPhone.trim(),
+        professionalId: newApt.professionalId,
+        serviceId: newApt.serviceId,
+        appointmentDate: newApt.appointmentDate,
+        appointmentTime: newApt.appointmentTime,
+        notes: newApt.notes || undefined,
+      },
+      {
+        onSuccess: () => {
+          setNewApt(emptyForm);
+          setShowForm(false);
+        },
+        onError: (error) =>
+          alert(error instanceof Error ? error.message : t('errors.tryAgain')),
+      }
+    );
+  };
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -76,13 +148,174 @@ function AppointmentsPage() {
           <p className="text-gray-600 mt-2">{t('appointments.subtitle')}</p>
         </div>
         <button
-          onClick={() => navigate({ to: '/dashboard' })}
+          onClick={() => setShowForm(!showForm)}
           className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
           {t('appointments.new')}
         </button>
       </div>
+
+      {/* New appointment form */}
+      {showForm && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">{t('appointments.new')}</h3>
+            <button
+              onClick={() => setShowForm(false)}
+              className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="label-base">{t('appointments.professional')} *</label>
+                <select
+                  value={newApt.professionalId}
+                  onChange={(e) =>
+                    setNewApt({
+                      ...newApt,
+                      professionalId: e.target.value,
+                      serviceId: '',
+                      appointmentTime: '',
+                    })
+                  }
+                  className="input-base w-full"
+                  required
+                >
+                  <option value="">{t('booking.selectProfessional')}</option>
+                  {professionals
+                    .filter((p) => p.active)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-base">{t('appointments.service')} *</label>
+                <select
+                  value={newApt.serviceId}
+                  onChange={(e) =>
+                    setNewApt({ ...newApt, serviceId: e.target.value, appointmentTime: '' })
+                  }
+                  className="input-base w-full"
+                  required
+                >
+                  <option value="">{t('booking.selectService')}</option>
+                  {availableServices.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.durationMinutes} min)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label-base">{t('appointments.date')} *</label>
+                <input
+                  type="date"
+                  value={newApt.appointmentDate}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  onChange={(e) =>
+                    setNewApt({ ...newApt, appointmentDate: e.target.value, appointmentTime: '' })
+                  }
+                  className="input-base w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label-base">{t('appointments.time')} *</label>
+                {newApt.professionalId && newApt.appointmentDate ? (
+                  slotsLoading ? (
+                    <p className="text-gray-600 text-sm py-2">{t('booking.loadingSlots')}</p>
+                  ) : slots.length > 0 ? (
+                    <select
+                      value={newApt.appointmentTime}
+                      onChange={(e) => setNewApt({ ...newApt, appointmentTime: e.target.value })}
+                      className="input-base w-full"
+                      required
+                    >
+                      <option value="">{t('booking.selectTime')}</option>
+                      {slots.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {slot}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-gray-600 text-sm py-2">{t('booking.noSlots')}</p>
+                  )
+                ) : (
+                  <p className="text-gray-500 text-sm py-2">{t('appointments.pickProfessionalDate')}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="label-base">{t('booking.fullName')} *</label>
+                <input
+                  type="text"
+                  value={newApt.clientName}
+                  onChange={(e) => setNewApt({ ...newApt, clientName: e.target.value })}
+                  placeholder="Maria da Silva"
+                  className="input-base w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label-base">{t('booking.clientPhone')} *</label>
+                <input
+                  type="tel"
+                  value={newApt.clientPhone}
+                  onChange={(e) => setNewApt({ ...newApt, clientPhone: e.target.value })}
+                  placeholder="(11) 99999-9999"
+                  className="input-base w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label-base">{t('booking.clientEmail')} *</label>
+                <input
+                  type="email"
+                  value={newApt.clientEmail}
+                  onChange={(e) => setNewApt({ ...newApt, clientEmail: e.target.value })}
+                  placeholder="maria@exemplo.com.br"
+                  className="input-base w-full"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label-base">{t('booking.notes')}</label>
+                <input
+                  type="text"
+                  value={newApt.notes}
+                  onChange={(e) => setNewApt({ ...newApt, notes: e.target.value })}
+                  placeholder={t('booking.notesPlaceholder')}
+                  className="input-base w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">
+                {t('common.cancel')}
+              </button>
+              <button type="submit" disabled={isCreating} className="btn-primary disabled:opacity-50">
+                {isCreating ? t('booking.confirming') : t('appointments.create')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="card">

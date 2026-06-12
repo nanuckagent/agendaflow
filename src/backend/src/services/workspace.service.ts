@@ -25,6 +25,8 @@ interface UpdateWorkspaceInput {
   sidebarColor?: string;
   accentColor?: string;
   logoUrl?: string;
+  storeEnabled?: boolean;
+  whatsappNumber?: string;
 }
 
 export class WorkspaceService {

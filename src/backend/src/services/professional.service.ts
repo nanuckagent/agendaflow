@@ -5,7 +5,19 @@
 
 import { eq, and, inArray } from 'drizzle-orm';
 import type { Database } from '../db/index.js';
-import { professionals, users, services, professionalServices } from '../db/schema/index.js';
+import {
+  professionals,
+  users,
+  services,
+  professionalServices,
+  professionalSchedules,
+} from '../db/schema/index.js';
+
+interface ScheduleEntry {
+  weekday: number;
+  startTime: string;
+  endTime: string;
+}
 
 interface CreateProfessionalInput {
   name: string;
@@ -139,6 +151,45 @@ export class ProfessionalService {
       where: eq(professionalServices.professionalId, professionalId),
     });
     return links.map((l) => l.serviceId);
+  }
+
+  /**
+   * Get weekly schedule for a professional
+   */
+  async getSchedule(professionalId: string, workspaceId: string) {
+    await this.getProfessional(professionalId, workspaceId);
+
+    const rows = await this.db.query.professionalSchedules.findMany({
+      where: eq(professionalSchedules.professionalId, professionalId),
+    });
+
+    return rows
+      .map((r) => ({ weekday: r.weekday, startTime: r.startTime, endTime: r.endTime }))
+      .sort((a, b) => a.weekday - b.weekday || a.startTime.localeCompare(b.startTime));
+  }
+
+  /**
+   * Replace the weekly schedule for a professional
+   */
+  async setSchedule(professionalId: string, workspaceId: string, entries: ScheduleEntry[]) {
+    await this.getProfessional(professionalId, workspaceId);
+
+    await this.db
+      .delete(professionalSchedules)
+      .where(eq(professionalSchedules.professionalId, professionalId));
+
+    if (entries.length > 0) {
+      await this.db.insert(professionalSchedules).values(
+        entries.map((e) => ({
+          professionalId,
+          weekday: e.weekday,
+          startTime: e.startTime,
+          endTime: e.endTime,
+        }))
+      );
+    }
+
+    return this.getSchedule(professionalId, workspaceId);
   }
 
   /**

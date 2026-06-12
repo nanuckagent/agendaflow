@@ -9,10 +9,12 @@ import {
   Users,
   Settings,
   Briefcase,
+  ShoppingBag,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth.js';
+import { useWorkspace } from '@/queries/workspaces.js';
 
 interface SidebarProps {
   open?: boolean;
@@ -30,6 +32,7 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { data: workspace } = useWorkspace((user as any)?.workspaceId || '');
 
   const navItems: NavItem[] = [
     {
@@ -52,6 +55,15 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
       href: '/dashboard/services',
       icon: <Briefcase size={20} />,
     },
+    ...(workspace?.storeEnabled
+      ? [
+          {
+            label: t('nav.products'),
+            href: '/dashboard/products',
+            icon: <ShoppingBag size={20} />,
+          },
+        ]
+      : []),
     {
       label: t('nav.settings'),
       href: '/dashboard/settings',

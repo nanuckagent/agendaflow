@@ -5,8 +5,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
 import { useAppointments } from '@/queries/appointments.js';
-import { Calendar, Users, TrendingUp, Clock } from 'lucide-react';
-import { useEffect } from 'react';
+import { useWorkspace } from '@/queries/workspaces.js';
+import { Calendar, Users, TrendingUp, Clock, Link2, Copy, Check, ShoppingBag } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfDay, endOfDay } from 'date-fns';
@@ -29,7 +30,9 @@ const chartData = [
 function DashboardPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const { data: workspace } = useWorkspace((user as any)?.workspaceId || '');
+  const [copied, setCopied] = useState<string | null>(null);
   const today = new Date();
   const { data: appointments = [], isLoading } = useAppointments({
     dateFrom: format(startOfDay(today), 'yyyy-MM-dd'),
@@ -81,6 +84,53 @@ function DashboardPage() {
           {t('dashboard.welcomeMessage')}
         </p>
       </div>
+
+      {/* Share booking link */}
+      {workspace?.slug && (
+        <div className="card">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {t('dashboard.shareLinkTitle')}
+          </h2>
+          <p className="text-gray-600 text-sm mb-4">{t('dashboard.shareLinkHint')}</p>
+          <div className="space-y-3">
+            {[
+              {
+                key: 'booking',
+                icon: <Link2 size={18} className="text-blue-600 shrink-0" />,
+                url: `${window.location.origin}/b/${workspace.slug}`,
+              },
+              ...(workspace.storeEnabled
+                ? [
+                    {
+                      key: 'store',
+                      icon: <ShoppingBag size={18} className="text-blue-600 shrink-0" />,
+                      url: `${window.location.origin}/b/${workspace.slug}/loja`,
+                    },
+                  ]
+                : []),
+            ].map(({ key, icon, url }) => (
+              <div
+                key={key}
+                className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3"
+              >
+                {icon}
+                <span className="font-mono text-sm text-gray-900 truncate flex-1">{url}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(url);
+                    setCopied(key);
+                    setTimeout(() => setCopied(null), 2000);
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                >
+                  {copied === key ? <Check size={16} /> : <Copy size={16} />}
+                  {copied === key ? t('common.copied') : t('common.copy')}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

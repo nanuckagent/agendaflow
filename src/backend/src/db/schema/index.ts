@@ -33,6 +33,8 @@ export const workspaces = pgTable(
     currency: varchar('currency', { length: 3 }).default('BRL'),
     mercadopagoAccessTokenEnc: text('mercadopago_access_token_enc'), // Encrypted
     stripePublicKey: varchar('stripe_public_key', { length: 255 }),
+    storeEnabled: boolean('store_enabled').default(false),
+    whatsappNumber: varchar('whatsapp_number', { length: 20 }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -130,6 +132,40 @@ export const services = pgTable(
   },
   (table) => ({
     workspaceIdx: index('idx_service_workspace').on(table.workspaceId),
+  })
+);
+
+// Professional weekly schedule (working hours per weekday; 0=Sunday..6=Saturday)
+export const professionalSchedules = pgTable(
+  'professional_schedules',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    professionalId: uuid('professional_id').notNull(),
+    weekday: integer('weekday').notNull(),
+    startTime: varchar('start_time', { length: 5 }).notNull(), // HH:mm
+    endTime: varchar('end_time', { length: 5 }).notNull(), // HH:mm
+  },
+  (table) => ({
+    professionalIdx: index('idx_professional_schedules_professional').on(table.professionalId),
+  })
+);
+
+// Products (optional store module per workspace)
+export const products = pgTable(
+  'products',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: uuid('workspace_id').notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description'),
+    priceInCents: integer('price_in_cents').notNull(),
+    imageUrl: text('image_url'),
+    active: boolean('active').default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    workspaceIdx: index('idx_product_workspace').on(table.workspaceId),
   })
 );
 

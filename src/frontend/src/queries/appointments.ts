@@ -119,21 +119,15 @@ export function useUpdateAppointment() {
   });
 }
 
-// Get availability for professional and service
-export function useAvailability(
-  professionalId: string,
-  serviceId: string,
-  date: string
-) {
+// Get available slots for professional/service/date (HH:mm list)
+export function useAvailability(professionalId: string, serviceId: string, date: string) {
   return useQuery({
     queryKey: ['availability', professionalId, serviceId, date],
     queryFn: () =>
-      apiClient.get<{
-        slots: { time: string; available: boolean }[];
-      }>(
-        `/v1/appointments/availability?professionalId=${professionalId}&serviceId=${serviceId}&date=${date}`
+      apiClient.get<{ date: string; slots: string[] }>(
+        `/v1/public/availability?professionalId=${professionalId}&serviceId=${serviceId}&date=${date}`
       ),
-    enabled: !!professionalId && !!serviceId && !!date,
+    enabled: !!professionalId && !!date,
     select: (data) => data.slots,
   });
 }

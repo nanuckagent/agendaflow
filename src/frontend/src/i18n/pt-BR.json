@@ -23,13 +23,16 @@
     "actions": "Ações",
     "saving": "Salvando...",
     "saveChanges": "Salvar Alterações",
-    "viewAll": "Ver Todos"
+    "viewAll": "Ver Todos",
+    "copy": "Copiar",
+    "copied": "Copiado!"
   },
   "nav": {
     "dashboard": "Dashboard",
     "appointments": "Agendamentos",
     "professionals": "Profissionais",
     "services": "Serviços",
+    "products": "Produtos",
     "settings": "Configurações",
     "profile": "Perfil",
     "help": "Ajuda"
@@ -96,7 +99,9 @@
     "completionRate": "Taxa de Conclusão",
     "cancellationRate": "Taxa de Cancelamento",
     "noShowRate": "Taxa de Não Comparecimento",
-    "noAppointmentsToday": "Sem agendamentos hoje"
+    "noAppointmentsToday": "Sem agendamentos hoje",
+    "shareLinkTitle": "Link de agendamento dos seus clientes",
+    "shareLinkHint": "Compartilhe este link para seus clientes agendarem online"
   },
   "appointments": {
     "title": "Agendamentos",
@@ -129,7 +134,9 @@
     "allStatuses": "Todos os Status",
     "dateTime": "Data e Hora",
     "confirmCancel": "Tem certeza que deseja cancelar este agendamento?",
-    "noneFound": "Nenhum agendamento encontrado"
+    "noneFound": "Nenhum agendamento encontrado",
+    "create": "Criar Agendamento",
+    "pickProfessionalDate": "Selecione profissional, serviço e data"
   },
   "professionals": {
     "title": "Profissionais",
@@ -161,7 +168,19 @@
     "emptyHint": "Adicione seu primeiro profissional para começar",
     "services": "Serviços oferecidos",
     "servicesHint": "Sem seleção, o profissional oferece todos os serviços ativos",
-    "allServices": "Todos os serviços"
+    "allServices": "Todos os serviços",
+    "schedule": "Jornada de trabalho",
+    "scheduleHint": "Marque os dias e horários em que o profissional atende",
+    "until": "até",
+    "weekdays": {
+      "0": "Domingo",
+      "1": "Segunda-feira",
+      "2": "Terça-feira",
+      "3": "Quarta-feira",
+      "4": "Quinta-feira",
+      "5": "Sexta-feira",
+      "6": "Sábado"
+    }
   },
   "services": {
     "title": "Serviços",
@@ -187,6 +206,38 @@
     "descriptionPlaceholder": "Descrição do serviço...",
     "empty": "Nenhum serviço ainda",
     "emptyHint": "Adicione seu primeiro serviço para começar"
+  },
+  "products": {
+    "title": "Produtos",
+    "subtitle": "Gerencie os produtos da sua lojinha",
+    "add": "Adicionar Produto",
+    "edit": "Editar Produto",
+    "addNew": "Adicionar Novo Produto",
+    "name": "Nome",
+    "namePlaceholder": "ex: Pomada Modeladora, Shampoo",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Descrição do produto...",
+    "price": "Preço",
+    "priceCurrency": "Preço (R$)",
+    "imageUrl": "URL da imagem",
+    "status": "Status",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "update": "Atualizar Produto",
+    "create": "Criar Produto",
+    "fillRequired": "Preencha todos os campos obrigatórios corretamente",
+    "confirmDelete": "Tem certeza que deseja deletar este produto?",
+    "empty": "Nenhum produto ainda",
+    "emptyHint": "Adicione seu primeiro produto para aparecer na lojinha"
+  },
+  "store": {
+    "title": "Loja",
+    "subtitle": "Produtos disponíveis — peça pelo WhatsApp",
+    "bookNow": "Agendar horário",
+    "notAvailable": "Esta loja não está disponível no momento.",
+    "empty": "Nenhum produto disponível no momento",
+    "orderWhatsapp": "Pedir pelo WhatsApp",
+    "whatsappMessage": "Olá! Tenho interesse no produto {{product}} ({{price}})."
   },
   "settings": {
     "title": "Configurações",
@@ -218,7 +269,13 @@
     "workspaceId": "ID do Workspace",
     "dangerZone": "Zona de Perigo",
     "dangerZoneWarning": "Estas ações são permanentes e não podem ser desfeitas.",
-    "deleteWorkspace": "Deletar Workspace"
+    "deleteWorkspace": "Deletar Workspace",
+    "storeTitle": "Lojinha",
+    "storeDescription": "Venda produtos para seus clientes com pedidos via WhatsApp. Módulo opcional, sem custo adicional.",
+    "storeEnable": "Ativar lojinha",
+    "whatsappNumber": "WhatsApp para pedidos",
+    "whatsappHint": "Número com DDD que receberá os pedidos da lojinha",
+    "storeUrl": "URL da sua loja:"
   },
   "booking": {
     "title": "Agendar Consulta",
@@ -254,7 +311,9 @@
     "loadingWorkspace": "Carregando agenda...",
     "workspaceNotFound": "Agenda não encontrada. Verifique o link de agendamento.",
     "fillRequired": "Preencha todos os campos obrigatórios",
-    "selectDateTime": "Selecione data e horário"
+    "selectDateTime": "Selecione data e horário",
+    "loadingSlots": "Buscando horários...",
+    "noSlots": "Sem horários livres nesta data. Tente outro dia."
   },
   "validation": {
     "required": "Campo obrigatório",

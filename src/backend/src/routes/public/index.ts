@@ -9,6 +9,8 @@ import type { RequestVariables } from '../../app.js';
 import { workspaces } from '../../db/schema/index.js';
 import { ProfessionalService } from '../../services/professional.service.js';
 import { ServiceService } from '../../services/service.service.js';
+import { AppointmentService } from '../../services/appointment.service.js';
+import { ProductService } from '../../services/product.service.js';
 
 export const publicDiscoveryRoutes = new Hono<{ Variables: RequestVariables }>();
 
@@ -55,6 +57,70 @@ publicDiscoveryRoutes.get('/public/workspaces/:slug', async (c) => {
       sidebarColor: workspace.sidebarColor,
       accentColor: workspace.accentColor,
       logoUrl: workspace.logoUrl,
+      storeEnabled: workspace.storeEnabled,
+      whatsappNumber: workspace.whatsappNumber,
+    },
+    200
+  );
+});
+
+// GET /v1/public/availability - Available slots for a professional on a date
+publicDiscoveryRoutes.get('/public/availability', async (c) => {
+  const workspaceId = c.req.header('X-Workspace-Id');
+  if (!workspaceId) return missingWorkspaceHeader(c);
+
+  const professionalId = c.req.query('professionalId');
+  const date = c.req.query('date');
+  const serviceId = c.req.query('serviceId');
+
+  if (!professionalId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return c.json(
+      {
+        type: 'https://agendaflow.local/errors/validation-error',
+        title: 'Validation Error',
+        status: 422,
+        detail: 'professionalId and date (yyyy-MM-dd) query parameters are required',
+      },
+      422
+    );
+  }
+
+  const appointmentService = new AppointmentService((c as any).db);
+  const slots = await appointmentService.calculateAvailability(
+    workspaceId,
+    professionalId,
+    date,
+    serviceId
+  );
+
+  return c.json({ date, slots }, 200);
+});
+
+// GET /v1/public/products - List active products (store module)
+publicDiscoveryRoutes.get('/public/products', async (c) => {
+  const workspaceId = c.req.header('X-Workspace-Id');
+  if (!workspaceId) return missingWorkspaceHeader(c);
+
+  const workspace = await (c as any).db.query.workspaces.findFirst({
+    where: eq(workspaces.id, workspaceId),
+  });
+
+  if (!workspace?.storeEnabled) {
+    return c.json({ data: [] }, 200);
+  }
+
+  const productService = new ProductService((c as any).db);
+  const items = await productService.listProducts(workspaceId, { active: true });
+
+  return c.json(
+    {
+      data: items.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        priceInCents: p.priceInCents,
+        imageUrl: p.imageUrl,
+      })),
     },
     200
   );

@@ -4,7 +4,12 @@
 
 import { Hono } from 'hono';
 import type { RequestVariables } from '../../app.js';
-import { professionalSchema, professionalServicesSchema, safeParse } from '../../lib/validation.js';
+import {
+  professionalSchema,
+  professionalServicesSchema,
+  scheduleSchema,
+  safeParse,
+} from '../../lib/validation.js';
 import { ProfessionalService } from '../../services/professional.service.js';
 import { requireAuth } from '../../middlewares/auth.js';
 
@@ -109,6 +114,37 @@ professionalRoutes.put('/professionals/:id/services', async (c) => {
   );
 
   return c.json({ serviceIds }, 200);
+});
+
+// GET /v1/professionals/:id/schedule - Get weekly schedule
+professionalRoutes.get('/professionals/:id/schedule', async (c) => {
+  const { workspaceId } = await requireAuth(c);
+
+  const professionalService = new ProfessionalService((c as any).db);
+  const entries = await professionalService.getSchedule(c.req.param('id'), workspaceId);
+
+  return c.json({ entries }, 200);
+});
+
+// PUT /v1/professionals/:id/schedule - Replace weekly schedule
+professionalRoutes.put('/professionals/:id/schedule', async (c) => {
+  const { workspaceId } = await requireAuth(c);
+
+  const body = await c.req.json();
+  const { data, error } = await safeParse(scheduleSchema, body);
+
+  if (error) {
+    return c.json(error, 422);
+  }
+
+  const professionalService = new ProfessionalService((c as any).db);
+  const entries = await professionalService.setSchedule(
+    c.req.param('id'),
+    workspaceId,
+    data!.entries
+  );
+
+  return c.json({ entries }, 200);
 });
 
 // DELETE /v1/professionals/:id - Deactivate professional

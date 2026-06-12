@@ -5,7 +5,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
 import { useWorkspace } from '@/hooks/useWorkspace.js';
-import { useUpdateBranding } from '@/queries/workspaces.js';
+import { useUpdateBranding, useWorkspace as useWorkspaceQuery } from '@/queries/workspaces.js';
 import { BrandingPreview } from '@/components/workspace/BrandingPreview.js';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,21 @@ function SettingsPage() {
 
   const [logoUrl, setLogoUrl] = useState<string | undefined>();
   const [success, setSuccess] = useState(false);
+  const [timezone, setTimezone] = useState('America/Sao_Paulo');
+  const [currency, setCurrency] = useState('BRL');
+  const [storeEnabled, setStoreEnabled] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+
+  const { data: workspaceData } = useWorkspaceQuery(activeWorkspaceId || '');
+
+  useEffect(() => {
+    if (workspaceData) {
+      setTimezone(workspaceData.timezone || 'America/Sao_Paulo');
+      setCurrency(workspaceData.currency || 'BRL');
+      setStoreEnabled(!!workspaceData.storeEnabled);
+      setWhatsappNumber(workspaceData.whatsappNumber || '');
+    }
+  }, [workspaceData]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -62,7 +77,11 @@ function SettingsPage() {
           sidebarColor: colors.sidebarColor,
           accentColor: colors.accentColor,
           logoUrl,
-        },
+          timezone,
+          currency,
+          storeEnabled,
+          whatsappNumber: whatsappNumber.trim() || undefined,
+        } as any,
       },
       {
         onSuccess: () => {
@@ -178,24 +197,82 @@ function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label-base">{t('settings.timezone')}</label>
-              <select className="input-base w-full">
-                <option>UTC</option>
-                <option>America/New_York</option>
-                <option>Europe/London</option>
-                <option>Asia/Tokyo</option>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="input-base w-full"
+              >
+                <option value="America/Sao_Paulo">America/Sao_Paulo (Brasília)</option>
+                <option value="America/Manaus">America/Manaus</option>
+                <option value="America/Cuiaba">America/Cuiaba</option>
+                <option value="America/Fortaleza">America/Fortaleza</option>
+                <option value="America/Rio_Branco">America/Rio_Branco</option>
+                <option value="America/Noronha">America/Noronha</option>
               </select>
             </div>
 
             <div>
               <label className="label-base">{t('settings.currency')}</label>
-              <select className="input-base w-full">
-                <option>USD</option>
-                <option>EUR</option>
-                <option>GBP</option>
-                <option>BRL</option>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="input-base w-full"
+              >
+                <option value="BRL">BRL (R$)</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
               </select>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Store module */}
+      <div className="card">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('settings.storeTitle')}</h2>
+        <p className="text-gray-600 text-sm mb-6">{t('settings.storeDescription')}</p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={storeEnabled}
+              onChange={(e) => setStoreEnabled(e.target.checked)}
+              className="rounded border-gray-300 h-5 w-5"
+            />
+            <span className="font-medium text-gray-900">{t('settings.storeEnable')}</span>
+          </label>
+
+          <div>
+            <label className="label-base">{t('settings.whatsappNumber')}</label>
+            <input
+              type="tel"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="(11) 99999-9999"
+              className="input-base w-full md:w-1/2"
+            />
+            <p className="text-sm text-gray-500 mt-1">{t('settings.whatsappHint')}</p>
+          </div>
+
+          {storeEnabled && workspaceData?.slug && (
+            <p className="text-sm text-gray-600">
+              {t('settings.storeUrl')}{' '}
+              <span className="font-mono text-blue-700">
+                {window.location.origin}/b/{workspaceData.slug}/loja
+              </span>
+            </p>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+          <button
+            onClick={handleSave}
+            disabled={isPending}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPending ? t('common.saving') : t('common.saveChanges')}
+          </button>
         </div>
       </div>
 

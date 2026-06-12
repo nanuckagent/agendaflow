@@ -18,7 +18,10 @@ function RootLayout() {
   }, [location.pathname]);
 
   // Check if we're on a public page (booking, oauth, etc)
-  const isPublicPage = ['/booking', '/oauth', '/'].includes(location.pathname) || location.pathname.startsWith('/booking');
+  const isPublicPage =
+    ['/booking', '/oauth', '/'].includes(location.pathname) ||
+    location.pathname.startsWith('/booking') ||
+    location.pathname.startsWith('/b/');
 
   if (isPublicPage) {
     return <Outlet />;

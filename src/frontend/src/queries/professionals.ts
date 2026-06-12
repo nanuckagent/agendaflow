@@ -86,6 +86,40 @@ export function useUpdateProfessional() {
   });
 }
 
+export interface ScheduleEntry {
+  weekday: number;
+  startTime: string;
+  endTime: string;
+}
+
+// Fetch weekly schedule for a professional
+export function useProfessionalSchedule(professionalId: string) {
+  return useQuery({
+    queryKey: ['professional-schedule', professionalId],
+    queryFn: () =>
+      apiClient.get<{ entries: ScheduleEntry[] }>(
+        `/v1/professionals/${professionalId}/schedule`
+      ),
+    select: (res) => res.entries,
+    enabled: !!professionalId,
+  });
+}
+
+// Replace weekly schedule for a professional
+export function useSetProfessionalSchedule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, entries }: { id: string; entries: ScheduleEntry[] }) =>
+      apiClient.put<{ entries: ScheduleEntry[] }>(`/v1/professionals/${id}/schedule`, {
+        entries,
+      }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['professional-schedule', id] });
+    },
+  });
+}
+
 // Replace the set of services a professional offers
 export function useSetProfessionalServices() {
   const queryClient = useQueryClient();

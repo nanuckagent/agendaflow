@@ -188,8 +188,9 @@ adminAppointmentRoutes.get('/appointments/slots/:professionalId', async (c) => {
     const slots = await appointmentService.getAvailableSlots(
       workspaceId,
       professionalId,
-      new Date(startDate),
-      new Date(endDate)
+      startDate,
+      endDate,
+      c.req.query('serviceId')
     );
 
     logger.info({ professionalId, startDate, endDate }, 'Available slots retrieved');

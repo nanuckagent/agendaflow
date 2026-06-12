@@ -89,6 +89,8 @@ workspaceRoutes.get('/workspaces/:id', async (c) => {
         sidebarColor: workspace.sidebarColor,
         accentColor: workspace.accentColor,
         logoUrl: workspace.logoUrl,
+        storeEnabled: workspace.storeEnabled,
+        whatsappNumber: workspace.whatsappNumber,
       },
       200
     );
@@ -147,7 +149,23 @@ workspaceRoutes.patch('/workspaces/:id', async (c) => {
     // Verify user owns workspace
     const workspace = await workspaceService.getWorkspace(id, userId);
 
-    const updated = await workspaceService.updateWorkspace(id, body);
+    // Whitelist updatable fields to avoid mass assignment
+    const allowed = [
+      'name',
+      'timezone',
+      'currency',
+      'primaryColor',
+      'sidebarColor',
+      'accentColor',
+      'logoUrl',
+      'storeEnabled',
+      'whatsappNumber',
+    ] as const;
+    const input = Object.fromEntries(
+      Object.entries(body).filter(([key]) => (allowed as readonly string[]).includes(key))
+    );
+
+    const updated = await workspaceService.updateWorkspace(id, input);
 
     logger.info({ workspaceId: id }, 'Workspace updated');
 
@@ -160,6 +178,8 @@ workspaceRoutes.patch('/workspaces/:id', async (c) => {
         sidebarColor: updated.sidebarColor,
         accentColor: updated.accentColor,
         logoUrl: updated.logoUrl,
+        storeEnabled: updated.storeEnabled,
+        whatsappNumber: updated.whatsappNumber,
       },
       200
     );

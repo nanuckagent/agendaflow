@@ -4,7 +4,15 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/useAuth.js';
-import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeactivateProfessional, useSetProfessionalServices } from '@/queries/professionals.js';
+import {
+  useProfessionals,
+  useCreateProfessional,
+  useUpdateProfessional,
+  useDeactivateProfessional,
+  useSetProfessionalServices,
+  useProfessionalSchedule,
+  useSetProfessionalSchedule,
+} from '@/queries/professionals.js';
 import { useServices } from '@/queries/services.js';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +20,18 @@ import { Users, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 export const Route = createFileRoute('/dashboard/professionals/')({
   component: ProfessionalsPage,
+});
+
+type DaySchedule = { enabled: boolean; startTime: string; endTime: string };
+
+const defaultWeekSchedule = (): Record<number, DaySchedule> => ({
+  0: { enabled: false, startTime: '09:00', endTime: '18:00' },
+  1: { enabled: true, startTime: '09:00', endTime: '18:00' },
+  2: { enabled: true, startTime: '09:00', endTime: '18:00' },
+  3: { enabled: true, startTime: '09:00', endTime: '18:00' },
+  4: { enabled: true, startTime: '09:00', endTime: '18:00' },
+  5: { enabled: true, startTime: '09:00', endTime: '18:00' },
+  6: { enabled: true, startTime: '09:00', endTime: '18:00' },
 });
 
 function ProfessionalsPage() {
@@ -23,11 +43,28 @@ function ProfessionalsPage() {
   const { mutate: updateProfessional } = useUpdateProfessional();
   const { mutate: deactivateProfessional } = useDeactivateProfessional();
   const { mutate: setProfessionalServices } = useSetProfessionalServices();
+  const { mutate: setProfessionalSchedule } = useSetProfessionalSchedule();
   const { data: services = [] } = useServices();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [weekSchedule, setWeekSchedule] = useState<Record<number, DaySchedule>>(
+    defaultWeekSchedule()
+  );
+
+  const { data: savedSchedule } = useProfessionalSchedule(editingId || '');
+
+  useEffect(() => {
+    if (editingId && savedSchedule && savedSchedule.length > 0) {
+      const next = defaultWeekSchedule();
+      for (let d = 0; d < 7; d++) next[d].enabled = false;
+      savedSchedule.forEach((e) => {
+        next[e.weekday] = { enabled: true, startTime: e.startTime, endTime: e.endTime };
+      });
+      setWeekSchedule(next);
+    }
+  }, [editingId, savedSchedule]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,6 +92,13 @@ function ProfessionalsPage() {
     }
 
     const serviceIds = selectedServiceIds;
+    const scheduleEntries = Object.entries(weekSchedule)
+      .filter(([, day]) => day.enabled && day.startTime < day.endTime)
+      .map(([weekday, day]) => ({
+        weekday: Number(weekday),
+        startTime: day.startTime,
+        endTime: day.endTime,
+      }));
 
     if (editingId) {
       updateProfessional({
@@ -62,12 +106,14 @@ function ProfessionalsPage() {
         data: formData,
       });
       setProfessionalServices({ id: editingId, serviceIds });
+      setProfessionalSchedule({ id: editingId, entries: scheduleEntries });
     } else {
       createProfessional(formData, {
         onSuccess: (created) => {
           if (serviceIds.length > 0) {
             setProfessionalServices({ id: created.id, serviceIds });
           }
+          setProfessionalSchedule({ id: created.id, entries: scheduleEntries });
         },
       });
     }
@@ -80,6 +126,7 @@ function ProfessionalsPage() {
       bio: '',
     });
     setSelectedServiceIds([]);
+    setWeekSchedule(defaultWeekSchedule());
     setEditingId(null);
     setShowForm(false);
   };
@@ -99,6 +146,7 @@ function ProfessionalsPage() {
       bio: professional.bio || '',
     });
     setSelectedServiceIds(professional.serviceIds || []);
+    setWeekSchedule(defaultWeekSchedule());
     setEditingId(professional.id);
     setShowForm(true);
   };
@@ -112,6 +160,7 @@ function ProfessionalsPage() {
       bio: '',
     });
     setSelectedServiceIds([]);
+    setWeekSchedule(defaultWeekSchedule());
     setEditingId(null);
     setShowForm(false);
   };
@@ -217,6 +266,61 @@ function ProfessionalsPage() {
                       <span className="text-sm text-gray-900">{service.name}</span>
                     </label>
                   ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="label-base">{t('professionals.schedule')}</label>
+              <p className="text-sm text-gray-500 mb-2">{t('professionals.scheduleHint')}</p>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((weekday) => (
+                  <div key={weekday} className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 w-32 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={weekSchedule[weekday].enabled}
+                        onChange={() =>
+                          setWeekSchedule({
+                            ...weekSchedule,
+                            [weekday]: {
+                              ...weekSchedule[weekday],
+                              enabled: !weekSchedule[weekday].enabled,
+                            },
+                          })
+                        }
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm text-gray-900">
+                        {t(`professionals.weekdays.${weekday}`)}
+                      </span>
+                    </label>
+                    <input
+                      type="time"
+                      value={weekSchedule[weekday].startTime}
+                      disabled={!weekSchedule[weekday].enabled}
+                      onChange={(e) =>
+                        setWeekSchedule({
+                          ...weekSchedule,
+                          [weekday]: { ...weekSchedule[weekday], startTime: e.target.value },
+                        })
+                      }
+                      className="input-base disabled:opacity-40"
+                    />
+                    <span className="text-gray-500 text-sm">{t('professionals.until')}</span>
+                    <input
+                      type="time"
+                      value={weekSchedule[weekday].endTime}
+                      disabled={!weekSchedule[weekday].enabled}
+                      onChange={(e) =>
+                        setWeekSchedule({
+                          ...weekSchedule,
+                          [weekday]: { ...weekSchedule[weekday], endTime: e.target.value },
+                        })
+                      }
+                      className="input-base disabled:opacity-40"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
