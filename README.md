@@ -4,15 +4,15 @@ Plataforma de agendamento inteligente com suporte a multi-tenancy, calendários 
 
 ## Features
 
-- 📅 **Smart Scheduling** — Intelligent calendar management with conflict detection
-- 👥 **Multi-Tenancy** — Complete data isolation for multiple organizations
-- 🔗 **Calendar Sharing** — Seamless sharing between team members
-- 🔐 **Secure Auth** — JWT + Argon2id with role-based access control
-- ⚡ **Real-time** — WebSocket support for live updates (Phase 2)
-- 📱 **Mobile Ready** — Responsive design, PWA support
-- 🌐 **Integrations** — Google Calendar, Outlook, Slack (Phase 2)
-- 📊 **Analytics** — Event trends, team insights
-- 🚀 **Scalable** — Built for distributed systems
+- 📅 **Booking público por tenant** — URL `/b/{slug}` com fluxo multi-step, disponibilidade real e schedules por profissional
+- 👥 **Multi-tenancy** — Workspaces isolados com branding customizado (cores + logo) aplicado em runtime
+- 🔐 **Auth completa** — Signup self-service, login email/senha, **reset de senha**, **verificação de email**, **Google OAuth** (vínculo automático por email)
+- 💳 **MercadoPago PIX por tenant** — Cada workspace configura seu próprio access token; QR PIX no checkout, polling de status, webhook idempotente, expiração automática de reservas não pagas (40 min)
+- 🛒 **Módulo loja opcional** — CRUD de produtos com checkout por WhatsApp (deep link `wa.me`)
+- 📧 **Pipeline de email assíncrono** — Templates PT-BR via BullMQ + nodemailer (Brevo SMTP); degrada para logs do worker quando credenciais não estão configuradas
+- 🔒 **PII criptografada** — Email/telefone do cliente em AES-256-GCM com chave derivada por workspace; hash SHA-256 para lookups
+- 📱 **Responsivo + PT-BR nativo** — i18n react-i18next com pt-BR default, timezone America/Sao_Paulo, R$ e dd/mm/yyyy
+- 🚀 **Stack moderna** — Hono + Drizzle + BullMQ no backend; React 18 + TanStack Router/Query + Zustand no frontend
 
 ## Quick Start
 
@@ -177,10 +177,6 @@ agendaflow/
 │   └── scripts/                    # Deployment utilities
 │
 ├── src/
-│   ├── shared/                     # Monorepo shared types
-│   │   ├── src/schemas/            # Zod validation schemas
-│   │   └── package.json
-│   │
 │   ├── backend/                    # Node.js/Hono API server
 │   │   ├── src/
 │   │   │   ├── app.ts              # Hono app setup
@@ -207,7 +203,9 @@ agendaflow/
 ├── docs/
 │   ├── README.md                   # Architecture overview
 │   ├── MULTI_TENANCY.md            # Data isolation strategy
-│   └── API.md                      # API reference (generated)
+│   ├── AUTH.md                     # Reset de senha, verificação, Google OAuth
+│   ├── PAYMENTS.md                 # MercadoPago PIX por tenant
+│   └── CREDENTIALS.md              # Guias Brevo SMTP, Google Cloud, MercadoPago
 │
 ├── .github/workflows/
 │   ├── ci.yml                      # Lint, test, build
@@ -231,13 +229,18 @@ Data isolation via `tenant_id` in all database tables. See [MULTI_TENANCY.md](do
 
 ### Security
 
-- **Authentication:** JWT with long expiry (7 days)
+- **Authentication:** JWT HS256 (access 15min, refresh 7 dias em cookie httpOnly SameSite=Strict)
 - **Password Hashing:** Argon2id (OWASP recommended)
+- **CSRF:** SameSite=Strict + `Content-Type: application/json` (sem double-submit tokens — ver CLAUDE.md)
 - **CORS:** Configured to allow frontend origin
 - **HTTPS:** Enforced in production via Traefik + Cloudflare
-- **Input Validation:** Zod schemas on all routes
-- **Rate Limiting:** Per-IP, per-tenant limits to prevent abuse
-- **Headers:** CSP, X-Frame-Options, X-Content-Type-Options
+- **Input Validation:** Zod schemas em todas as rotas (`safeParse` → RFC7807)
+- **Rate Limiting:** Redis fixed-window por prefix (register 5/15min, login 10/15min, forgot/reset 5–10/15min, webhook MP 60/min)
+- **Password reset:** Token redis single-use (getdel) com TTL 30min + revogação de todas as sessões
+- **Verificação de email:** Token TTL 48h; login NÃO bloqueia, banner amber no dashboard
+- **PII em repouso:** AES-256-GCM por workspace (`encryptPII(value, workspaceKey)`)
+- **MercadoPago token:** Criptografado com chave `${JWT_SECRET}:${workspaceId}` (nunca workspaceId puro)
+- **Webhook:** Nunca confia no body — re-busca o pagamento na API MP com o token do tenant; idempotente; sempre 200
 
 ## API Reference
 
@@ -361,8 +364,10 @@ For more issues, see [DEPLOY.md Troubleshooting](DEPLOY.md#troubleshooting).
 - **[CLAUDE.md](CLAUDE.md)** — Non-negotiable rules, design decisions
 - **[DEPLOY.md](DEPLOY.md)** — Production deployment guide
 - **[docs/README.md](docs/README.md)** — Architecture & ADRs
+- **[docs/AUTH.md](docs/AUTH.md)** — Password reset, email verification, Google OAuth
+- **[docs/PAYMENTS.md](docs/PAYMENTS.md)** — MercadoPago PIX integration (per-tenant)
+- **[docs/CREDENTIALS.md](docs/CREDENTIALS.md)** — Step-by-step guides: Brevo SMTP, Google Cloud Console, MercadoPago
 - **[docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md)** — Data isolation strategy
-- **[docs/API.md](docs/API.md)** — API reference (auto-generated)
 
 ## License
 

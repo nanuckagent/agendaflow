@@ -318,6 +318,9 @@ database_connections{state="active"} 5
 
 ## See Also
 
+- [AUTH.md](./AUTH.md) — Password reset, email verification, Google OAuth flows
+- [PAYMENTS.md](./PAYMENTS.md) — MercadoPago PIX integration (per-tenant)
+- [CREDENTIALS.md](./CREDENTIALS.md) — Brevo SMTP, Google Cloud, MercadoPago setup guides
 - [MULTI_TENANCY.md](./MULTI_TENANCY.md) — Data isolation details
 - [../CLAUDE.md](../CLAUDE.md) — Non-negotiable architectural rules
 - [../DEPLOY.md](../DEPLOY.md) — Production deployment guide
