@@ -35,6 +35,7 @@ export const workspaces = pgTable(
     stripePublicKey: varchar('stripe_public_key', { length: 255 }),
     storeEnabled: boolean('store_enabled').default(false),
     whatsappNumber: varchar('whatsapp_number', { length: 20 }),
+    onlinePaymentsEnabled: boolean('online_payments_enabled').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -58,6 +59,8 @@ export const users = pgTable(
     workspaceId: uuid('workspace_id').notNull(),
     role: varchar('role', { length: 20 }).default('member'), // admin, manager, member, professional
     active: boolean('active').default(true),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

@@ -4,12 +4,24 @@
  */
 
 import { Hono } from 'hono';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 import type { RequestVariables } from '../../app.js';
+import { workspaces } from '../../db/schema/index.js';
 import { workspaceSchema, safeParse } from '../../lib/validation.js';
 import { WorkspaceService } from '../../services/workspace.service.js';
+import { mercadopagoTokenKey } from '../../services/payment.service.js';
+import { encryptPII } from '../../lib/crypto.js';
 import { requireAuth } from '../../middlewares/auth.js';
 
 export const workspaceRoutes = new Hono<{ Variables: RequestVariables }>();
+
+const forbiddenResponse = {
+  type: 'https://agendaflow.local/errors/forbidden',
+  title: 'Forbidden',
+  status: 403,
+  detail: 'Only the workspace owner can manage payment credentials',
+} as const;
 
 // POST /v1/workspaces - Create new workspace
 workspaceRoutes.post('/workspaces', async (c) => {
@@ -91,6 +103,8 @@ workspaceRoutes.get('/workspaces/:id', async (c) => {
         logoUrl: workspace.logoUrl,
         storeEnabled: workspace.storeEnabled,
         whatsappNumber: workspace.whatsappNumber,
+        onlinePaymentsEnabled: workspace.onlinePaymentsEnabled,
+        mercadopagoConfigured: !!workspace.mercadopagoAccessTokenEnc,
       },
       200
     );
@@ -160,6 +174,7 @@ workspaceRoutes.patch('/workspaces/:id', async (c) => {
       'logoUrl',
       'storeEnabled',
       'whatsappNumber',
+      'onlinePaymentsEnabled',
     ] as const;
     const input = Object.fromEntries(
       Object.entries(body).filter(([key]) => (allowed as readonly string[]).includes(key))
@@ -180,6 +195,8 @@ workspaceRoutes.patch('/workspaces/:id', async (c) => {
         logoUrl: updated.logoUrl,
         storeEnabled: updated.storeEnabled,
         whatsappNumber: updated.whatsappNumber,
+        onlinePaymentsEnabled: updated.onlinePaymentsEnabled,
+        mercadopagoConfigured: !!updated.mercadopagoAccessTokenEnc,
       },
       200
     );
@@ -219,6 +236,114 @@ workspaceRoutes.patch('/workspaces/:id', async (c) => {
         status: 500,
         detail: 'Failed to update workspace',
       },
+      500
+    );
+  }
+});
+
+// PUT /v1/workspaces/:id/mercadopago-token - Set the tenant's MercadoPago access token (owner-only)
+workspaceRoutes.put('/workspaces/:id/mercadopago-token', async (c) => {
+  const { id } = c.req.param();
+  const logger = c.get('logger');
+
+  try {
+    const { userId } = await requireAuth(c);
+    const body = await c.req.json();
+
+    const { data, error } = await safeParse(
+      z.object({ accessToken: z.string().min(10).max(512) }),
+      body
+    );
+
+    if (error) {
+      return c.json(error, 422);
+    }
+
+    const workspaceService = new WorkspaceService((c as any).db);
+    const workspace = await workspaceService.getWorkspace(id, userId);
+
+    if (workspace.ownerUserId !== userId) {
+      return c.json(forbiddenResponse, 403);
+    }
+
+    const tokenEnc = encryptPII(data!.accessToken.trim(), mercadopagoTokenKey(id));
+
+    await (c as any).db
+      .update(workspaces)
+      .set({ mercadopagoAccessTokenEnc: tokenEnc, updatedAt: new Date() })
+      .where(eq(workspaces.id, id));
+
+    logger.info({ workspaceId: id }, 'MercadoPago token configured');
+
+    return c.json({ mercadopagoConfigured: true }, 200);
+  } catch (error) {
+    logger.error(error, 'MercadoPago token update error');
+
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    if (message === 'Workspace not found') {
+      return c.json(
+        { type: 'https://agendaflow.local/errors/not-found', title: 'Not Found', status: 404, detail: 'Workspace not found' },
+        404
+      );
+    }
+
+    if (message === 'Unauthorized' || message === 'Authentication required') {
+      return c.json(forbiddenResponse, 403);
+    }
+
+    return c.json(
+      { type: 'https://agendaflow.local/errors/server-error', title: 'Server Error', status: 500, detail: 'Failed to update MercadoPago token' },
+      500
+    );
+  }
+});
+
+// DELETE /v1/workspaces/:id/mercadopago-token - Remove token and disable online payments (owner-only)
+workspaceRoutes.delete('/workspaces/:id/mercadopago-token', async (c) => {
+  const { id } = c.req.param();
+  const logger = c.get('logger');
+
+  try {
+    const { userId } = await requireAuth(c);
+
+    const workspaceService = new WorkspaceService((c as any).db);
+    const workspace = await workspaceService.getWorkspace(id, userId);
+
+    if (workspace.ownerUserId !== userId) {
+      return c.json(forbiddenResponse, 403);
+    }
+
+    await (c as any).db
+      .update(workspaces)
+      .set({
+        mercadopagoAccessTokenEnc: null,
+        onlinePaymentsEnabled: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(workspaces.id, id));
+
+    logger.info({ workspaceId: id }, 'MercadoPago token removed');
+
+    return c.json({ mercadopagoConfigured: false, onlinePaymentsEnabled: false }, 200);
+  } catch (error) {
+    logger.error(error, 'MercadoPago token removal error');
+
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    if (message === 'Workspace not found') {
+      return c.json(
+        { type: 'https://agendaflow.local/errors/not-found', title: 'Not Found', status: 404, detail: 'Workspace not found' },
+        404
+      );
+    }
+
+    if (message === 'Unauthorized' || message === 'Authentication required') {
+      return c.json(forbiddenResponse, 403);
+    }
+
+    return c.json(
+      { type: 'https://agendaflow.local/errors/server-error', title: 'Server Error', status: 500, detail: 'Failed to remove MercadoPago token' },
       500
     );
   }

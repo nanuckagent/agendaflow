@@ -2,13 +2,14 @@
  * Public booking flow (multi-step form), shared by /b/$slug and legacy /booking?workspace=
  */
 
-import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ArrowLeft, Check, ShoppingBag } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Check, Copy, QrCode, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiClient } from '@/lib/api.js';
+import { applyWorkspaceTheme } from '@/lib/colors.js';
 
 export interface PublicWorkspace {
   id: string;
@@ -17,6 +18,8 @@ export interface PublicWorkspace {
   timezone: string;
   currency: string;
   primaryColor?: string;
+  sidebarColor?: string;
+  accentColor?: string;
   logoUrl?: string;
   storeEnabled?: boolean;
   whatsappNumber?: string;
@@ -38,6 +41,13 @@ interface PublicService {
   priceInCents: number;
 }
 
+interface BookingPayment {
+  id: string;
+  qrCode: string | null;
+  qrCodeBase64: string | null;
+  amountInCents: number;
+}
+
 export function usePublicWorkspace(workspaceSlug?: string) {
   return useQuery({
     queryKey: ['public-workspace', workspaceSlug],
@@ -48,7 +58,6 @@ export function usePublicWorkspace(workspaceSlug?: string) {
 }
 
 export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [step, setStep] = useState(1);
@@ -61,6 +70,8 @@ export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
   const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [bookingCode, setBookingCode] = useState('');
+  const [payment, setPayment] = useState<BookingPayment | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
 
   const {
     data: workspace,
@@ -69,6 +80,16 @@ export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
   } = usePublicWorkspace(workspaceSlug);
 
   const workspaceHeader = workspace ? { 'X-Workspace-Id': workspace.id } : undefined;
+
+  useEffect(() => {
+    if (workspace) {
+      applyWorkspaceTheme({
+        primaryColor: workspace.primaryColor || '#3b5bdb',
+        sidebarColor: workspace.sidebarColor || '#1a2d7a',
+        accentColor: workspace.accentColor || '#0066cc',
+      });
+    }
+  }, [workspace]);
 
   const { data: professionals = [] } = useQuery({
     queryKey: ['public-professionals', workspace?.id],
@@ -110,12 +131,61 @@ export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
 
   const { mutate: createAppointment, isPending } = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
-      apiClient.post<{ id: string; code: string; status: string }>(
+      apiClient.post<{ id: string; code: string; status: string; payment: BookingPayment | null }>(
         '/v1/appointments/book',
         data,
         workspaceHeader
       ),
   });
+
+  const { data: paymentStatus } = useQuery({
+    queryKey: ['public-payment-status', payment?.id],
+    queryFn: () =>
+      apiClient.get<{ status: string; appointmentStatus: string | null }>(
+        `/v1/public/payments/${payment!.id}/status`
+      ),
+    enabled: !!payment && step === 5,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (
+        data?.status === 'approved' ||
+        data?.appointmentStatus === 'confirmed' ||
+        data?.appointmentStatus === 'cancelled'
+      ) {
+        return false;
+      }
+      return 4000;
+    },
+  });
+
+  const paymentApproved =
+    paymentStatus?.status === 'approved' || paymentStatus?.appointmentStatus === 'confirmed';
+
+  const handleCopyPix = async () => {
+    if (!payment?.qrCode) return;
+    try {
+      await navigator.clipboard.writeText(payment.qrCode);
+      setPixCopied(true);
+      setTimeout(() => setPixCopied(false), 2500);
+    } catch {
+      // clipboard unavailable (non-HTTPS/old browser) — user can select the code manually
+    }
+  };
+
+  const resetFlow = () => {
+    setStep(1);
+    setSelectedProfessional('');
+    setSelectedService('');
+    setAppointmentDate('');
+    setAppointmentTime('');
+    setClientName('');
+    setClientEmail('');
+    setClientPhone('');
+    setNotes('');
+    setBookingCode('');
+    setPayment(null);
+    setPixCopied(false);
+  };
 
   const formatPrice = (cents: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -160,6 +230,7 @@ export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
       {
         onSuccess: (data) => {
           setBookingCode(data.code);
+          setPayment(data.payment ?? null);
           setStep(5);
         },
         onError: (error) => {
@@ -430,30 +501,83 @@ export function BookingFlow({ workspaceSlug }: { workspaceSlug?: string }) {
           </div>
         )}
 
-        {/* Step 5: Confirmation */}
+        {/* Step 5: Confirmation (+ PIX payment when applicable) */}
         {step === 5 && (
           <div className="card text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check size={32} className="text-green-600" />
-            </div>
+            {payment && !paymentApproved ? (
+              <>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <QrCode size={32} className="text-blue-600" />
+                </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {t('booking.bookingConfirmed')}
-            </h2>
-            <p className="text-gray-600 mb-6">{t('booking.successMessage')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('booking.pixTitle')}</h2>
+                <p className="text-gray-600 mb-2">
+                  {t('booking.pixAmount')}{' '}
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(payment.amountInCents)}
+                  </span>
+                </p>
+                <p className="text-gray-600 text-sm mb-6">{t('booking.pixInstructions')}</p>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-left">
-              <p className="text-sm text-gray-600 mb-2">{t('booking.bookingCode')}</p>
-              <p className="text-2xl font-bold text-blue-900 font-mono">{bookingCode}</p>
-              <p className="text-sm text-gray-600 mt-4">
-                {t('booking.confirmationEmail')}{' '}
-                <span className="font-medium">{clientEmail}</span>
-              </p>
-            </div>
+                {payment.qrCodeBase64 && (
+                  <img
+                    src={`data:image/png;base64,${payment.qrCodeBase64}`}
+                    alt="QR Code PIX"
+                    className="w-56 h-56 mx-auto mb-4 border border-gray-200 rounded-lg"
+                  />
+                )}
 
-            <button onClick={() => navigate({ to: '/' })} className="btn-primary">
-              {t('common.backToHome')}
-            </button>
+                {payment.qrCode && (
+                  <div className="mb-6">
+                    <p className="text-xs text-gray-500 font-mono break-all bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3 max-h-24 overflow-y-auto">
+                      {payment.qrCode}
+                    </p>
+                    <button
+                      onClick={handleCopyPix}
+                      className="btn-primary inline-flex items-center gap-2"
+                    >
+                      <Copy size={18} />
+                      {pixCopied ? t('booking.pixCopied') : t('booking.pixCopyCode')}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-6">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
+                  {t('booking.pixWaiting')}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                  <p className="text-sm text-gray-600 mb-1">{t('booking.bookingCode')}</p>
+                  <p className="text-xl font-bold text-blue-900 font-mono">{bookingCode}</p>
+                  <p className="text-xs text-gray-500 mt-2">{t('booking.pixHoldWarning')}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Check size={32} className="text-green-600" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {payment ? t('booking.pixConfirmed') : t('booking.bookingConfirmed')}
+                </h2>
+                <p className="text-gray-600 mb-6">{t('booking.successMessage')}</p>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-left">
+                  <p className="text-sm text-gray-600 mb-2">{t('booking.bookingCode')}</p>
+                  <p className="text-2xl font-bold text-blue-900 font-mono">{bookingCode}</p>
+                  <p className="text-sm text-gray-600 mt-4">
+                    {t('booking.confirmationEmail')}{' '}
+                    <span className="font-medium">{clientEmail}</span>
+                  </p>
+                </div>
+
+                <button onClick={resetFlow} className="btn-primary">
+                  {t('booking.newBooking')}
+                </button>
+              </>
+            )}
           </div>
         )}
 

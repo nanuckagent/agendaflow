@@ -1,73 +1,40 @@
 /**
- * MercadoPago payment routes
- * Handles payment processing and webhooks
+ * MercadoPago webhook route.
+ * The webhook body is never trusted: the payment is re-fetched from the
+ * MP API with the tenant's token before any state change.
  */
 
 import { Hono } from 'hono';
 import type { RequestVariables } from '../../app.js';
+import { PaymentService } from '../../services/payment.service.js';
 
 export const mercadopagoRoutes = new Hono<{ Variables: RequestVariables }>();
 
-// POST /v1/payments/mercadopago/webhook - MercadoPago webhook
+// POST /v1/payments/mercadopago/webhook?workspaceId= - MercadoPago notification
 mercadopagoRoutes.post('/mercadopago/webhook', async (c) => {
   const logger = c.get('logger');
 
   try {
-    const body = await c.req.json();
+    const workspaceId = c.req.query('workspaceId');
+    const body = await c.req.json().catch(() => ({} as any));
 
-    logger.info({ body }, 'MercadoPago webhook received');
+    // MP sends the payment id either as data.id (webhooks) or ?id= (IPN)
+    const externalId = String(body?.data?.id || c.req.query('id') || '');
 
-    // TODO: Verify webhook signature
-    // TODO: Update payment status in database
-    // TODO: Update appointment status if payment approved
-    // TODO: Send confirmation email
+    if (!workspaceId || !externalId || externalId === 'undefined') {
+      logger.warn({ workspaceId, externalId }, 'MercadoPago webhook missing identifiers');
+      return c.json({ received: true }, 200);
+    }
+
+    const paymentService = new PaymentService((c as any).db);
+    const result = await paymentService.processMercadopagoNotification(workspaceId, externalId);
+
+    logger.info({ workspaceId, externalId, result }, 'MercadoPago webhook processed');
 
     return c.json({ received: true }, 200);
   } catch (error) {
     logger.error(error, 'MercadoPago webhook error');
-
-    return c.json(
-      {
-        type: 'https://agendaflow.local/errors/webhook-error',
-        title: 'Webhook Error',
-        status: 500,
-        detail: 'Failed to process webhook',
-      },
-      500
-    );
-  }
-});
-
-// POST /v1/payments/mercadopago/checkout - Create payment
-mercadopagoRoutes.post('/mercadopago/checkout', async (c) => {
-  const logger = c.get('logger');
-
-  try {
-    const { appointmentId, amount } = await c.req.json();
-
-    // TODO: Create MercadoPago preference
-    // TODO: Store pending payment in database
-    // TODO: Return preference URL for client
-
-    logger.info({ appointmentId, amount }, 'Payment checkout created');
-
-    return c.json(
-      {
-        preferenceUrl: 'https://mercadopago.com.ar/checkout/...',
-      },
-      200
-    );
-  } catch (error) {
-    logger.error(error, 'Payment checkout error');
-
-    return c.json(
-      {
-        type: 'https://agendaflow.local/errors/payment-error',
-        title: 'Payment Error',
-        status: 500,
-        detail: 'Failed to create payment',
-      },
-      500
-    );
+    // Always 200: MP retries on non-2xx, and we never want to leak state
+    return c.json({ received: true }, 200);
   }
 });

@@ -93,17 +93,17 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 bottom-0 w-64 bg-gray-900 text-white shadow-lg transform transition-transform duration-300 z-40 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 bottom-0 w-64 bg-[rgb(var(--workspace-sidebar))] text-white shadow-lg transform transition-transform duration-300 z-40 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="h-screen flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-gray-700 flex items-center justify-between">
+          <div className="p-6 border-b border-white/10 flex items-center justify-between">
             <h2 className="text-xl font-bold">{t('common.menu')}</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-800 rounded-lg lg:hidden"
+              className="p-1 hover:bg-white/10 rounded-lg lg:hidden"
               aria-label={t('common.close')}
             >
               <X size={20} />
@@ -119,8 +119,8 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
                     onClick={() => handleNavigate(item.href)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive(item.href)
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-800'
+                        ? 'bg-[rgb(var(--workspace-primary))] text-white'
+                        : 'text-gray-300 hover:bg-white/10'
                     }`}
                   >
                     {item.icon}
@@ -132,9 +132,9 @@ export function Sidebar({ open = true, onClose }: SidebarProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-white/10">
             {user && (
-              <div className="px-4 py-3 rounded-lg bg-gray-800">
+              <div className="px-4 py-3 rounded-lg bg-white/10">
                 <p className="text-sm text-gray-300">{t('common.loggedInAs')}</p>
                 <p className="text-sm font-medium text-white truncate">{user.email}</p>
               </div>

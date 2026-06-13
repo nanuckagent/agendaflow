@@ -6,7 +6,7 @@
 import { Hono } from 'hono';
 import { eq, sql } from 'drizzle-orm';
 import type { RequestVariables } from '../../app.js';
-import { workspaces } from '../../db/schema/index.js';
+import { appointments, payments, workspaces } from '../../db/schema/index.js';
 import { ProfessionalService } from '../../services/professional.service.js';
 import { ServiceService } from '../../services/service.service.js';
 import { AppointmentService } from '../../services/appointment.service.js';
@@ -25,6 +25,13 @@ function missingWorkspaceHeader(c: any) {
     422
   );
 }
+
+// GET /v1/public/config - Feature flags for the frontend
+publicDiscoveryRoutes.get('/public/config', (c) => {
+  return c.json({
+    googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+  });
+});
 
 // GET /v1/public/workspaces/:slug - Resolve workspace by slug (public branding info only)
 // logoUrl is served by a dedicated endpoint: base64 logos stored in the DB would
@@ -237,4 +244,49 @@ publicDiscoveryRoutes.get('/public/services', async (c) => {
     },
     200
   );
+});
+
+// GET /v1/public/payments/:id/status - Poll payment status during PIX checkout
+publicDiscoveryRoutes.get('/public/payments/:id/status', async (c) => {
+  const { id } = c.req.param();
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return c.json(
+      {
+        type: 'https://agendaflow.local/errors/validation-error',
+        title: 'Validation Error',
+        status: 422,
+        detail: 'Invalid payment id',
+      },
+      422
+    );
+  }
+
+  const payment = await (c as any).db.query.payments.findFirst({
+    where: eq(payments.id, id),
+    columns: { id: true, status: true, appointmentId: true },
+  });
+
+  if (!payment) {
+    return c.json(
+      {
+        type: 'https://agendaflow.local/errors/not-found',
+        title: 'Not Found',
+        status: 404,
+        detail: 'Payment not found',
+      },
+      404
+    );
+  }
+
+  let appointmentStatus: string | null = null;
+  if (payment.appointmentId) {
+    const appointment = await (c as any).db.query.appointments.findFirst({
+      where: eq(appointments.id, payment.appointmentId),
+      columns: { status: true },
+    });
+    appointmentStatus = appointment?.status ?? null;
+  }
+
+  return c.json({ status: payment.status, appointmentStatus }, 200);
 });

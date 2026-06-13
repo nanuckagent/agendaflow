@@ -17,6 +17,8 @@ export interface Workspace {
   logoUrl?: string;
   storeEnabled?: boolean;
   whatsappNumber?: string;
+  onlinePaymentsEnabled?: boolean;
+  mercadopagoConfigured?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -37,6 +39,7 @@ export interface UpdateBrandingRequest {
   logoUrl?: string;
   storeEnabled?: boolean;
   whatsappNumber?: string;
+  onlinePaymentsEnabled?: boolean;
 }
 
 // Fetch user's workspaces

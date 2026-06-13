@@ -4,9 +4,12 @@
  */
 
 import { Hono } from 'hono';
+import { and, eq } from 'drizzle-orm';
 import type { RequestVariables } from '../../app.js';
+import { appointments, services, workspaces } from '../../db/schema/index.js';
 import { appointmentSchema, safeParse } from '../../lib/validation.js';
 import { AppointmentService } from '../../services/appointment.service.js';
+import { PaymentService } from '../../services/payment.service.js';
 
 export const publicAppointmentRoutes = new Hono<{ Variables: RequestVariables }>();
 
@@ -37,9 +40,10 @@ publicAppointmentRoutes.post('/appointments/book', async (c) => {
   }
 
   try {
-    const appointmentService = new AppointmentService((c as any).db);
+    const db = (c as any).db;
+    const appointmentService = new AppointmentService(db);
 
-    const appointment = await appointmentService.bookAppointment(workspaceId, {
+    let appointment = await appointmentService.bookAppointment(workspaceId, {
       clientName: data!.clientName,
       clientPhone: data!.clientPhone,
       clientEmail: data!.clientEmail,
@@ -52,8 +56,60 @@ publicAppointmentRoutes.post('/appointments/book', async (c) => {
 
     logger.info({ appointmentId: appointment.id, workspaceId }, 'Appointment booked');
 
-    // TODO: Send confirmation email
-    // TODO: Queue SMS notification
+    // PIX upfront payment when the tenant enabled online payments
+    let paymentInfo: {
+      id: string;
+      qrCode: string | null;
+      qrCodeBase64: string | null;
+      amountInCents: number;
+    } | null = null;
+
+    try {
+      const workspace = await db.query.workspaces.findFirst({
+        where: eq(workspaces.id, workspaceId),
+        columns: { id: true, onlinePaymentsEnabled: true, mercadopagoAccessTokenEnc: true },
+      });
+
+      const service = await db.query.services.findFirst({
+        where: and(eq(services.id, data!.serviceId), eq(services.workspaceId, workspaceId)),
+        columns: { name: true, priceInCents: true },
+      });
+
+      if (
+        workspace?.onlinePaymentsEnabled &&
+        workspace.mercadopagoAccessTokenEnc &&
+        service &&
+        service.priceInCents > 0
+      ) {
+        const paymentService = new PaymentService(db);
+        const payment = await paymentService.createPixPayment(
+          workspace as { id: string; mercadopagoAccessTokenEnc: string },
+          appointment,
+          service,
+          data!.clientEmail
+        );
+
+        const [updated] = await db
+          .update(appointments)
+          .set({ status: 'pending_payment', updatedAt: new Date() })
+          .where(and(eq(appointments.id, appointment.id), eq(appointments.workspaceId, workspaceId)))
+          .returning();
+        appointment = updated;
+
+        const metadata = (payment.metadata ?? {}) as Record<string, any>;
+        paymentInfo = {
+          id: payment.id,
+          qrCode: metadata.qrCode ?? null,
+          qrCodeBase64: metadata.qrCodeBase64 ?? null,
+          amountInCents: payment.amountInCents,
+        };
+
+        logger.info({ appointmentId: appointment.id, paymentId: payment.id }, 'PIX payment created');
+      }
+    } catch (paymentError) {
+      // Degrade gracefully: booking stays valid as a regular pending appointment
+      logger.error(paymentError, 'PIX payment creation failed - booking kept as pending');
+    }
 
     return c.json(
       {
@@ -62,6 +118,7 @@ publicAppointmentRoutes.post('/appointments/book', async (c) => {
         status: appointment.status,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
+        payment: paymentInfo,
       },
       201
     );

@@ -100,7 +100,7 @@ export class AppointmentService {
         eq(appointments.professionalId, professionalId),
         gte(appointments.appointmentDate, dayStart),
         lte(appointments.appointmentDate, dayEnd),
-        inArray(appointments.status, ['pending', 'confirmed'])
+        inArray(appointments.status, ['pending', 'pending_payment', 'confirmed'])
       ),
     });
 

@@ -38,17 +38,17 @@
     "i18next": "^23.15.2",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",
+    "react-colorful": "^5.6.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "react-i18next": "^15.1.4",
+    "recharts": "^2.12.7",
     "workbox-expiration": "^7.1.0",
     "workbox-precaching": "^7.1.0",
     "workbox-routing": "^7.1.0",
     "workbox-strategies": "^7.1.0",
     "zod": "^3.24.1",
-    "zustand": "^5.0.3",
-    "agendaflow-shared": "workspace:*",
-    "recharts": "^2.12.7"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.1",

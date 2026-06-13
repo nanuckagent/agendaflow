@@ -8,9 +8,33 @@ import { eq, or, sql } from 'drizzle-orm';
 import type { RequestVariables } from '../../app.js';
 import { users, workspaces } from '../../db/schema/index.js';
 import { registerSchema, safeParse } from '../../lib/validation.js';
-import { hashEmail } from '../../lib/crypto.js';
+import { generateToken, hashEmail } from '../../lib/crypto.js';
 import { AuthService } from '../../services/auth.service.js';
 import { WorkspaceService } from '../../services/workspace.service.js';
+import { enqueueEmail } from '../../lib/queue.js';
+import { verifyEmailTemplate } from '../../lib/email-templates.js';
+import { env } from '../../env.js';
+
+export const VERIFY_EMAIL_TTL_SECONDS = 48 * 60 * 60;
+
+export async function sendVerificationEmail(
+  redis: any,
+  userId: string,
+  email: string
+): Promise<void> {
+  const token = generateToken(32);
+  await redis.set(`verifyemail:${token}`, userId, 'EX', VERIFY_EMAIL_TTL_SECONDS);
+
+  const frontendUrl = env.FRONTEND_URL || env.API_URL;
+  const content = verifyEmailTemplate(`${frontendUrl}/verify-email?token=${token}`);
+
+  await enqueueEmail(redis, {
+    to: email,
+    subject: content.subject,
+    text: content.text,
+    html: content.html,
+  });
+}
 
 export const registerRoutes = new Hono<{ Variables: RequestVariables }>();
 
@@ -122,6 +146,12 @@ registerRoutes.post('/register', async (c) => {
 
     logger.info({ userId: user.id, workspaceId: workspace.id, slug }, 'User registered');
 
+    try {
+      await sendVerificationEmail((c as any).redis, user.id, user.email);
+    } catch (mailErr) {
+      logger.error(mailErr, 'Failed to enqueue verification email');
+    }
+
     return c.json(
       {
         user: {
@@ -131,6 +161,7 @@ registerRoutes.post('/register', async (c) => {
           lastName: user.lastName,
           workspaceId: user.workspaceId,
           role: user.role,
+          emailVerified: false,
         },
         workspace: {
           id: workspace.id,

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth.js';
 import { useAuthStore } from '@/stores/auth-store.js';
 import { useWorkspaceStore } from '@/stores/workspace-store.js';
 import { ArrowRight } from 'lucide-react';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton.js';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -59,6 +60,8 @@ function LoginPage() {
         id: data.user.id,
         email: data.user.email,
         name: [data.user.firstName, data.user.lastName].filter(Boolean).join(' '),
+        workspaceId: data.user.workspaceId,
+        emailVerified: data.user.emailVerified,
         createdAt: '',
         updatedAt: '',
       });
@@ -122,6 +125,12 @@ function LoginPage() {
             />
           </div>
 
+          <div className="text-right -mt-2">
+            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              {t('auth.forgotPassword')}
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -130,6 +139,8 @@ function LoginPage() {
             {loading ? t('auth.signingIn') : t('auth.login')}
             {!loading && <ArrowRight size={20} />}
           </button>
+
+          <GoogleAuthButton mode="login" />
 
           <p className="text-sm text-gray-600 text-center">
             {t('auth.noAccount')}{' '}

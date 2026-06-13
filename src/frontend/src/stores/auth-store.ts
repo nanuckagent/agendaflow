@@ -9,6 +9,8 @@ interface User {
   id: string;
   email: string;
   name: string;
+  workspaceId?: string;
+  emailVerified?: boolean;
   createdAt: string;
   updatedAt: string;
 }

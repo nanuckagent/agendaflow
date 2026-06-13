@@ -108,6 +108,7 @@ loginRoutes.post('/login', async (c) => {
           lastName: user.lastName,
           workspaceId: user.workspaceId,
           role: user.role,
+          emailVerified: user.emailVerified,
         },
         accessToken: tokens.accessToken,
         expiresIn: tokens.expiresIn,

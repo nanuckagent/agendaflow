@@ -45,6 +45,13 @@ const envSchema = z.object({
   // MercadoPago
   MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
 
+  // SMTP (optional — without it, worker logs emails instead of sending)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  MAIL_FROM: z.string().optional(),
+
   // Sentry (optional)
   SENTRY_DSN: z.string().optional(),
 

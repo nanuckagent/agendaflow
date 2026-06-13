@@ -27,6 +27,7 @@ interface UpdateWorkspaceInput {
   logoUrl?: string;
   storeEnabled?: boolean;
   whatsappNumber?: string;
+  onlinePaymentsEnabled?: boolean;
 }
 
 export class WorkspaceService {

@@ -1,4 +1,3 @@
 packages:
-  - src/shared
   - src/backend
   - src/frontend

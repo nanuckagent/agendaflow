@@ -147,6 +147,34 @@ export const registerSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 /**
+ * Password reset schemas
+ */
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .email()
+    .transform((e) => e.toLowerCase().trim()),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(16).max(128),
+  password: z.string().min(8).max(128),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * Email verification schema
+ */
+export const verifyEmailSchema = z.object({
+  token: z.string().min(16).max(128),
+});
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+/**
  * Safe parse with error handling
  */
 export async function safeParse<T>(schema: z.Schema<T>, data: unknown): Promise<{ data?: T; error?: any }> {

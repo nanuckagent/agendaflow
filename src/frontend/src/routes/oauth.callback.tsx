@@ -29,7 +29,7 @@ function OAuthCallback() {
   const { code, error } = useSearch({ from: '/oauth/callback' });
   const [errorMessage, setErrorMessage] = useState<string>('');
   const { setUser, setToken } = useAuthStore();
-  const { setWorkspaces, setActiveWorkspace } = useWorkspaceStore();
+  const { addWorkspace, setActiveWorkspace } = useWorkspaceStore();
 
   useEffect(() => {
     // Handle OAuth errors
@@ -58,6 +58,7 @@ function OAuthCallback() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({ code }),
         });
 
@@ -68,25 +69,30 @@ function OAuthCallback() {
 
         const data = await response.json();
 
-        // Store token and user info
-        if (data.token && data.user) {
-          setToken(data.token);
-          setUser(data.user);
+        if (data.accessToken && data.user) {
+          setToken(data.accessToken);
+          setUser({
+            id: data.user.id,
+            email: data.user.email,
+            name: [data.user.firstName, data.user.lastName].filter(Boolean).join(' '),
+            workspaceId: data.user.workspaceId,
+            emailVerified: data.user.emailVerified,
+            createdAt: '',
+            updatedAt: '',
+          });
 
-          // Store workspaces if provided
-          if (data.workspaces && Array.isArray(data.workspaces)) {
-            setWorkspaces(data.workspaces);
-            if (data.workspaces.length > 0) {
-              setActiveWorkspace(data.workspaces[0].id);
-            }
+          if (data.workspace) {
+            addWorkspace({
+              id: data.workspace.id,
+              slug: data.workspace.slug,
+              name: data.workspace.name,
+              timezone: 'America/Sao_Paulo',
+              currency: 'BRL',
+            });
           }
+          setActiveWorkspace(data.user.workspaceId);
 
-          // Redirect to dashboard or onboarding
-          if (data.workspaces && data.workspaces.length > 0) {
-            navigate({ to: '/dashboard' });
-          } else {
-            navigate({ to: '/onboarding' });
-          }
+          navigate({ to: '/dashboard' });
         } else {
           throw new Error(t('auth.invalidServerResponse'));
         }
@@ -100,7 +106,7 @@ function OAuthCallback() {
     };
 
     exchangeCode();
-  }, [code, error, navigate, setUser, setToken, setWorkspaces, setActiveWorkspace]);
+  }, [code, error, navigate, setUser, setToken, addWorkspace, setActiveWorkspace]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

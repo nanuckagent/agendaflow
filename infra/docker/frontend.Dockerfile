@@ -19,8 +19,6 @@ ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm install -g pnpm@9.0.0
 
 COPY package.json pnpm-workspace.yaml ./
-COPY ./src/shared/package.json ./src/shared/
-COPY ./src/shared/tsconfig.json ./src/shared/
 COPY ./src/frontend/package.json ./src/frontend/
 COPY ./src/frontend/tsconfig.json ./src/frontend/
 COPY ./src/frontend/vite.config.ts ./src/frontend/
@@ -30,7 +28,6 @@ COPY ./src/frontend/postcss.config.js ./src/frontend/
 
 RUN pnpm install --recursive
 
-COPY ./src/shared/src ./src/shared/src
 COPY ./src/frontend/src ./src/frontend/src
 
 RUN cd src/frontend && pnpm run build

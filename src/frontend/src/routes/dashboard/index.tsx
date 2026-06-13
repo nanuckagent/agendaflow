@@ -16,6 +16,12 @@ export const Route = createFileRoute('/dashboard/')({
   component: DashboardPage,
 });
 
+// appointmentDate is a UTC-midnight ISO timestamp; format the date part as dd/mm/yyyy
+function formatAppointmentDate(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
 // Sample data for chart
 const chartData = [
   { date: 'Seg', appointments: 4, revenue: 120 },
@@ -240,7 +246,7 @@ function DashboardPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.client')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.professional')}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.time')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.dateTime')}</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">{t('appointments.status')}</th>
                 </tr>
               </thead>
@@ -249,7 +255,9 @@ function DashboardPage() {
                   <tr key={apt.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-900">{apt.clientName}</td>
                     <td className="py-3 px-4 text-gray-600">{t('appointments.professional')}</td>
-                    <td className="py-3 px-4 text-gray-600">{apt.appointmentTime}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {formatAppointmentDate(apt.appointmentDate)} {apt.appointmentTime}
+                    </td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${

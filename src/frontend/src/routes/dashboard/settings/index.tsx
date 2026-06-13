@@ -9,7 +9,9 @@ import { useUpdateBranding, useWorkspace as useWorkspaceQuery } from '@/queries/
 import { BrandingPreview } from '@/components/workspace/BrandingPreview.js';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, AlertCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
+import { apiClient } from '@/lib/api.js';
 
 export const Route = createFileRoute('/dashboard/settings/')({
   component: SettingsPage,
@@ -34,7 +36,12 @@ function SettingsPage() {
   const [currency, setCurrency] = useState('BRL');
   const [storeEnabled, setStoreEnabled] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [onlinePaymentsEnabled, setOnlinePaymentsEnabled] = useState(false);
+  const [mpToken, setMpToken] = useState('');
+  const [mpSaving, setMpSaving] = useState(false);
+  const [mpError, setMpError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
   const { data: workspaceData } = useWorkspaceQuery(activeWorkspaceId || '');
 
   useEffect(() => {
@@ -43,6 +50,7 @@ function SettingsPage() {
       setCurrency(workspaceData.currency || 'BRL');
       setStoreEnabled(!!workspaceData.storeEnabled);
       setWhatsappNumber(workspaceData.whatsappNumber || '');
+      setOnlinePaymentsEnabled(!!workspaceData.onlinePaymentsEnabled);
     }
   }, [workspaceData]);
 
@@ -81,6 +89,7 @@ function SettingsPage() {
           currency,
           storeEnabled,
           whatsappNumber: whatsappNumber.trim() || undefined,
+          onlinePaymentsEnabled,
         } as any,
       },
       {
@@ -90,6 +99,36 @@ function SettingsPage() {
         },
       }
     );
+  };
+
+  const handleSaveMpToken = async () => {
+    setMpSaving(true);
+    setMpError(null);
+    try {
+      await apiClient.put(`/v1/workspaces/${activeWorkspaceId}/mercadopago-token`, {
+        accessToken: mpToken.trim(),
+      });
+      setMpToken('');
+      await queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
+    } catch {
+      setMpError(t('settings.mpTokenError'));
+    } finally {
+      setMpSaving(false);
+    }
+  };
+
+  const handleRemoveMpToken = async () => {
+    setMpSaving(true);
+    setMpError(null);
+    try {
+      await apiClient.delete(`/v1/workspaces/${activeWorkspaceId}/mercadopago-token`);
+      setOnlinePaymentsEnabled(false);
+      await queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
+    } catch {
+      setMpError(t('settings.mpTokenError'));
+    } finally {
+      setMpSaving(false);
+    }
   };
 
   return (
@@ -262,6 +301,80 @@ function SettingsPage() {
                 {window.location.origin}/b/{workspaceData.slug}/loja
               </span>
             </p>
+          )}
+        </div>
+
+        <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+          <button
+            onClick={handleSave}
+            disabled={isPending}
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPending ? t('common.saving') : t('common.saveChanges')}
+          </button>
+        </div>
+      </div>
+
+      {/* Payments module */}
+      <div className="card">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('settings.paymentsTitle')}</h2>
+        <p className="text-gray-600 text-sm mb-6">{t('settings.paymentsDescription')}</p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={onlinePaymentsEnabled}
+              onChange={(e) => setOnlinePaymentsEnabled(e.target.checked)}
+              className="rounded border-gray-300 h-5 w-5"
+            />
+            <span className="font-medium text-gray-900">{t('settings.paymentsEnable')}</span>
+          </label>
+
+          {workspaceData?.mercadopagoConfigured ? (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
+              <div>
+                <p className="font-medium text-green-900">{t('settings.mpTokenConfigured')}</p>
+                <p className="text-sm text-green-700 font-mono">APP_USR-••••••••••••••••</p>
+              </div>
+              <button
+                onClick={handleRemoveMpToken}
+                disabled={mpSaving}
+                className="text-red-600 border border-red-300 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {t('settings.mpTokenRemove')}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="label-base">{t('settings.mpTokenLabel')}</label>
+              <div className="flex gap-3">
+                <input
+                  type="password"
+                  value={mpToken}
+                  onChange={(e) => setMpToken(e.target.value)}
+                  placeholder="APP_USR-..."
+                  autoComplete="off"
+                  className="input-base flex-1"
+                />
+                <button
+                  onClick={handleSaveMpToken}
+                  disabled={mpSaving || mpToken.trim().length < 10}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {mpSaving ? t('common.saving') : t('common.save')}
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">{t('settings.mpTokenHint')}</p>
+            </div>
+          )}
+
+          {mpError && <p className="text-sm text-red-600">{mpError}</p>}
+
+          {onlinePaymentsEnabled && !workspaceData?.mercadopagoConfigured && (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+              {t('settings.paymentsNeedToken')}
+            </div>
           )}
         </div>
 

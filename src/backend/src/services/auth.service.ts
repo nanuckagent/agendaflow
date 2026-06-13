@@ -184,6 +184,16 @@ export class AuthService {
   }
 
   /**
+   * Revoke all refresh tokens for a user (e.g., after password reset)
+   */
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    await this.db
+      .update(refreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(eq(refreshTokens.userId, userId));
+  }
+
+  /**
    * Parse expiry string (e.g., "7d", "15m") into seconds
    */
   private parseExpiry(expiry: string): number {
